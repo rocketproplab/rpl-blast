@@ -15,4 +15,17 @@ class Config:
     NUM_PRESSURE_TRANSDUCERS = 3
     NUM_FLOW_CONTROL_VALVES = 6
 
+    # Safety boundaries
+    TEMPERATURE_BOUNDARIES = {
+        'safe': [0, 600],
+        'warning': [600, 800],
+        'danger': [800, 1000]
+    }
+    
+    PRESSURE_BOUNDARIES = {
+        'safe': [0, 500],
+        'warning': [500, 750],
+        'danger': [750, 1000]
+    }
+
     SECRET_KEY = 'your-secret-key' 

@@ -5,7 +5,9 @@
 const Config = {
     NUM_THERMOCOUPLES: {{ config.NUM_THERMOCOUPLES }},
     NUM_PRESSURE_TRANSDUCERS: {{ config.NUM_PRESSURE_TRANSDUCERS }},
-    NUM_FLOW_CONTROL_VALVES: 6
+    NUM_FLOW_CONTROL_VALVES: 6,
+    TEMPERATURE_BOUNDARIES: {{ config.TEMPERATURE_BOUNDARIES | tojson }},
+    PRESSURE_BOUNDARIES: {{ config.PRESSURE_BOUNDARIES | tojson }}
 };
 </script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>

@@ -21,7 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
             fixedrange: false,
             rangeslider: {
                 visible: false
-            }
+            },
+            dtick: 1,
+            tickformat: '.0f',
+            // ticksuffix: 's'
         },
         font: {
             size: 10
@@ -36,6 +39,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Create thermocouple chart
     let tcChart = Plotly.newPlot('tc-chart', [
+        // Background shapes for zones
+        {
+            type: 'scatter',
+            x: [0, 0],  // Will be updated in updateCharts
+            y: [0, Config.TEMPERATURE_BOUNDARIES.safe[1]],
+            fill: 'tozeroy',
+            fillcolor: 'rgba(0, 255, 0, 0.2)',
+            line: { width: 0 },
+            name: 'Safe Zone',
+            showlegend: false,
+            yaxis: 'y2'
+        },
+        {
+            type: 'scatter',
+            x: [0, 0],  // Will be updated in updateCharts
+            y: [Config.TEMPERATURE_BOUNDARIES.safe[1], Config.TEMPERATURE_BOUNDARIES.warning[1]],
+            fill: 'tonexty',
+            fillcolor: 'rgba(255, 165, 0, 0.2)',
+            line: { width: 0 },
+            name: 'Warning Zone',
+            showlegend: false,
+            yaxis: 'y2'
+        },
+        {
+            type: 'scatter',
+            x: [0, 0],  // Will be updated in updateCharts
+            y: [Config.TEMPERATURE_BOUNDARIES.warning[1], Config.TEMPERATURE_BOUNDARIES.danger[1]],
+            fill: 'tonexty',
+            fillcolor: 'rgba(255, 0, 0, 0.2)',
+            line: { width: 0 },
+            name: 'Danger Zone',
+            showlegend: false,
+            yaxis: 'y2'
+        },
+        // Thermocouple traces
         ...Array(Config.NUM_THERMOCOUPLES).fill().map((_, i) => ({
             y: [],
             type: 'line',
@@ -48,11 +86,55 @@ document.addEventListener('DOMContentLoaded', function() {
             range: [0, 1000],
             title: 'Temperature',
             fixedrange: true
+        },
+        yaxis2: {
+            range: [0, 1000],
+            overlaying: 'y',
+            showgrid: false,
+            zeroline: false,
+            showline: false,
+            showticklabels: false,
+            fixedrange: true
         }
     });
 
     // Create pressure transducer chart
     let ptChart = Plotly.newPlot('pt-chart', [
+        // Background shapes for zones
+        {
+            type: 'scatter',
+            x: [0, 0],  // Will be updated in updateCharts
+            y: [0, Config.PRESSURE_BOUNDARIES.safe[1]],
+            fill: 'tozeroy',
+            fillcolor: 'rgba(0, 255, 0, 0.2)',
+            line: { width: 0 },
+            name: 'Safe Zone',
+            showlegend: false,
+            yaxis: 'y2'
+        },
+        {
+            type: 'scatter',
+            x: [0, 0],  // Will be updated in updateCharts
+            y: [Config.PRESSURE_BOUNDARIES.safe[1], Config.PRESSURE_BOUNDARIES.warning[1]],
+            fill: 'tonexty',
+            fillcolor: 'rgba(255, 165, 0, 0.2)',
+            line: { width: 0 },
+            name: 'Warning Zone',
+            showlegend: false,
+            yaxis: 'y2'
+        },
+        {
+            type: 'scatter',
+            x: [0, 0],  // Will be updated in updateCharts
+            y: [Config.PRESSURE_BOUNDARIES.warning[1], Config.PRESSURE_BOUNDARIES.danger[1]],
+            fill: 'tonexty',
+            fillcolor: 'rgba(255, 0, 0, 0.2)',
+            line: { width: 0 },
+            name: 'Danger Zone',
+            showlegend: false,
+            yaxis: 'y2'
+        },
+        // Pressure transducer traces
         ...Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map((_, i) => ({
             y: [],
             type: 'line',
@@ -64,6 +146,15 @@ document.addEventListener('DOMContentLoaded', function() {
         yaxis: {
             range: [0, 1000],
             title: 'Pressure',
+            fixedrange: true
+        },
+        yaxis2: {
+            range: [0, 1000],
+            overlaying: 'y',
+            showgrid: false,
+            zeroline: false,
+            showline: false,
+            showticklabels: false,
             fixedrange: true
         }
     });
@@ -100,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateCharts() {
         const currentTime = (Date.now() - startTime) / 1000;
+        const xrange = [Math.max(0, currentTime - 30), currentTime];
         
         fetch('/data')
             .then(response => response.json())
@@ -114,23 +206,48 @@ document.addEventListener('DOMContentLoaded', function() {
                         sensorData.pt[i].push(val);
                     });
 
-                    // Update plots with sliding window
-                    const xrange = [Math.max(0, currentTime - 30), currentTime];
-                    
-                    // Update TC chart
+                    // Update TC chart with zones
                     Plotly.update('tc-chart', {
-                        x: Array(Config.NUM_THERMOCOUPLES).fill(sensorData.x),
-                        y: sensorData.tc
+                        x: [
+                            [xrange[0], xrange[1]],  // Safe zone
+                            [xrange[0], xrange[1]],  // Warning zone
+                            [xrange[0], xrange[1]],  // Danger zone
+                            ...Array(Config.NUM_THERMOCOUPLES).fill(sensorData.x)
+                        ],
+                        y: [
+                            [Config.TEMPERATURE_BOUNDARIES.safe[1], Config.TEMPERATURE_BOUNDARIES.safe[1]],  // Safe zone
+                            [Config.TEMPERATURE_BOUNDARIES.warning[1], Config.TEMPERATURE_BOUNDARIES.warning[1]],  // Warning zone
+                            [Config.TEMPERATURE_BOUNDARIES.danger[1], Config.TEMPERATURE_BOUNDARIES.danger[1]],  // Danger zone
+                            ...sensorData.tc
+                        ]
                     }, {
-                        xaxis: {range: xrange}
+                        xaxis: {
+                            range: xrange,
+                            dtick: 1,
+                            tickformat: '.0f'
+                        }
                     });
 
-                    // Update PT chart
+                    // Update PT chart with zones
                     Plotly.update('pt-chart', {
-                        x: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill(sensorData.x),
-                        y: sensorData.pt
+                        x: [
+                            [xrange[0], xrange[1]],  // Safe zone
+                            [xrange[0], xrange[1]],  // Warning zone
+                            [xrange[0], xrange[1]],  // Danger zone
+                            ...Array(Config.NUM_PRESSURE_TRANSDUCERS).fill(sensorData.x)
+                        ],
+                        y: [
+                            [Config.PRESSURE_BOUNDARIES.safe[1], Config.PRESSURE_BOUNDARIES.safe[1]],  // Safe zone
+                            [Config.PRESSURE_BOUNDARIES.warning[1], Config.PRESSURE_BOUNDARIES.warning[1]],  // Warning zone
+                            [Config.PRESSURE_BOUNDARIES.danger[1], Config.PRESSURE_BOUNDARIES.danger[1]],  // Danger zone
+                            ...sensorData.pt
+                        ]
                     }, {
-                        xaxis: {range: xrange}
+                        xaxis: {
+                            range: xrange,
+                            dtick: 1,
+                            tickformat: '.0f'
+                        }
                     });
 
                     // Keep only last 300 points
