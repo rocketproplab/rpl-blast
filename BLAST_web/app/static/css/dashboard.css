@@ -7,13 +7,32 @@ body {
 }
 
 header {
-    padding: 10px 0;
+    padding: 10px 20px;
 }
 
 header h1 {
     margin: 0;
     font-size: 1.5rem;
-    text-align: center;
+    text-align: left;
+}
+
+.site-title {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: left;
+    font-weight: normal;  /* Reset font weight */
+}
+
+.blast-text {
+    font-weight: 700;  /* Make BLAST bold */
+}
+
+.page-name {
+    font-weight: normal;  /* Ensure the page name is not bold */
+}
+
+.site-title strong {
+    font-weight: 700;
 }
 
 main {
@@ -113,4 +132,51 @@ button[onclick*="'right'"] {
 
 .all-valve-btn {
     background: #28a745;
+}
+
+/* Add these new styles */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.nav-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.nav-card h2 {
+    margin: 0 0 10px 0;
+    color: #007bff;
+}
+
+.nav-card p {
+    margin: 0;
+    color: #666;
+}
+
+.page-nav {
+    padding: 10px 0;
+}
+
+.nav-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
 } 

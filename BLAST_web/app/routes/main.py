@@ -19,22 +19,44 @@ if not hasattr(main_bp, 'data_source'):
 
 @main_bp.route('/')
 def index():
-    return render_template('dashboard.html', config=Config)
+    """Landing page with links to each sensor type"""
+    return render_template('index.html')
+
+@main_bp.route('/thermocouples')
+def thermocouples():
+    """Thermocouple monitoring page"""
+    return render_template('thermocouples.html', config=Config)
+
+@main_bp.route('/pressure')
+def pressure():
+    """Pressure transducer monitoring page"""
+    return render_template('pressure.html', config=Config)
+
+@main_bp.route('/valves')
+def valves():
+    """Flow control valve monitoring page"""
+    return render_template('valves.html', config=Config)
 
 @main_bp.route('/data')
 def get_data():
+    sensor_type = request.args.get('type', 'all')
     sensor_data = main_bp.data_source.read_data()
+    
     if sensor_data:
-        return jsonify({'value': sensor_data.to_dict()})
+        data_dict = sensor_data.to_dict()
+        if sensor_type != 'all':
+            # Return only the requested sensor type data
+            return jsonify({'value': {sensor_type: data_dict[sensor_type]}})
+        return jsonify({'value': data_dict})
     return jsonify({'value': None})
 
-@main_bp.route('/toggle_led', methods=['POST'])
-def toggle_led():
+@main_bp.route('/toggle_valve', methods=['POST'])
+def toggle_valve():
     if isinstance(main_bp.data_source, SerialReader):
         try:
             data = request.get_json()
             valve = data.get('valve', 0)
-            success = main_bp.data_source.toggle_led(valve)
+            success = main_bp.data_source.toggle_valve(valve)
             return jsonify({'success': success})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})
