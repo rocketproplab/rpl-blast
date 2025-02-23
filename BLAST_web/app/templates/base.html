@@ -4,15 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% block head %}{% endblock %}
 </head>
 <body>
     <header>
-        <h1 class="site-title">
-            <span class="blast-text">BLAST</span> | <span class="page-name">{% block header_title %}Big Launch Analysis & Stats Terminal{% endblock %}</span>
-        </h1>
+        <div class="header-content">
+            <h1 class="site-title">
+                <span class="blast-text">BLAST</span> | <span class="page-name">{% block header_title %}Big Launch Analysis & Stats Terminal{% endblock %}</span>
+            </h1>
+            {% if request.endpoint != 'main.index' %}
+            <nav class="page-nav">
+                <a href="{{ url_for('main.index') }}" class="nav-link">← Back to Dashboard</a>
+            </nav>
+            {% endif %}
+        </div>
     </header>
     
     <main>

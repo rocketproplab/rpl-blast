@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}BLAST | Pressure Transducers{% endblock %}
+{% block header_title %}Pressure Transducers{% endblock %}
+
+{% block head %}
+<script>
+const Config = {
+    PRESSURE_TRANSDUCERS: {{ config.PRESSURE_TRANSDUCERS | tojson }},
+    NUM_PRESSURE_TRANSDUCERS: {{ config.NUM_PRESSURE_TRANSDUCERS }},
+    PRESSURE_BOUNDARIES: {{ config.PRESSURE_BOUNDARIES | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/pt_line.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pt_agg.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pt_stat.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pt-grid">
+        <div class="pt-line-container">
+            <div id="pt-subplots"></div>
+        </div>
+        <div class="pt-agg-container">
+            <div id="pt-agg-plot"></div>
+        </div>
+        <div class="pt-stat-container">
+            {% for pt in config.PRESSURE_TRANSDUCERS %}
+            <div class="pt-stat-chart" style="background-color: rgba(0, 0, 255, 0.1);">PT{{ loop.index }} Stats</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

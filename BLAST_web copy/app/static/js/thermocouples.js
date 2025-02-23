@@ -145,5 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('resize', function() {
         Plotly.Plots.resize('tc-chart');
+
     });
 }); 

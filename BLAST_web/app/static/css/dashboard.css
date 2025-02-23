@@ -1,3 +1,41 @@
+/* Define Roboto font faces */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Roboto/Roboto-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Roboto/Roboto-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Roboto/Roboto-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Roboto/Roboto-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Apply Roboto font globally */
+* {
+    font-family: 'Roboto', sans-serif;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -8,6 +46,15 @@ body {
 
 header {
     padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 header h1 {
@@ -20,15 +67,15 @@ header h1 {
     margin: 0;
     font-size: 1.5rem;
     text-align: left;
-    font-weight: normal;  /* Reset font weight */
+    font-weight: 400;  /* Regular weight for the title */
 }
 
 .blast-text {
-    font-weight: 700;  /* Make BLAST bold */
+    font-weight: 700;  /* Bold weight for BLAST */
 }
 
 .page-name {
-    font-weight: normal;  /* Ensure the page name is not bold */
+    font-weight: 400;  /* Regular weight for the page name */
 }
 
 .site-title strong {
@@ -168,15 +215,59 @@ button[onclick*="'right'"] {
 }
 
 .page-nav {
-    padding: 10px 0;
+    margin-left: auto;  /* Push to the right */
 }
 
 .nav-link {
-    color: #007bff;
     text-decoration: none;
-    font-weight: 500;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-weight: 400;  /* Regular weight for navigation links */
 }
 
 .nav-link:hover {
-    text-decoration: underline;
+    background-color: #f0f0f0;
+}
+
+/* Pressure transducer grid layout */
+.pt-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 2fr 1fr;
+    gap: 0px;
+    padding: 10px; /* Force 10px padding */
+    height: 100%;
+}
+
+.pt-line-container, .pt-agg-container, .pt-stat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    overflow-y: auto;
+}
+
+.pt-line-chart, .pt-stat-chart, .pt-agg-chart {
+    width: 100%;
+    flex: 1;
+    min-height: 150px; /* Minimum height for visibility */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* For multiple PT charts */
+.pt-line-container .pt-line-chart {
+    height: 200px; /* Fixed height for each individual chart */
+}
+
+.pt-stat-container .pt-stat-chart {
+    height: 200px;
+}
+
+/* Make the aggregate chart fill its container */
+.pt-agg-container .pt-agg-chart {
+    height: 100%;
 } 

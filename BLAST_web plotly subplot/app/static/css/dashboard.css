@@ -1,0 +1,289 @@
+/* Define Roboto font faces */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Roboto/Roboto-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Roboto/Roboto-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Apply Roboto font globally */
+* {
+    font-family: 'Roboto', Arial, sans-serif;  /* Added fallback fonts */
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.site-title {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: left;
+    font-weight: normal;  /* Reset font weight */
+}
+
+.blast-text {
+    font-weight: 700;  /* Make BLAST bold */
+}
+
+.page-name {
+    font-weight: normal;  /* Ensure the page name is not bold */
+}
+
+.site-title strong {
+    font-weight: 700;
+}
+
+main {
+    flex: 1;
+    min-height: 0;  /* Important for flex container */
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px;
+    height: 100%;
+}
+
+.chart-container {
+    display: grid;
+    grid-template-rows: 1fr 1fr auto;
+    gap: 10px;
+    height: 100%;
+}
+
+.plot {
+    width: 100%;
+    height: 100%;
+    min-height: 0;  /* Important for grid layout */
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.js-plotly-plot {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+}
+
+.valve-section {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.valve-indicators {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+.indicator {
+    height: 80px;  /* Reduced height */
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.valve-controls {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 10px;
+}
+
+.individual-controls {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+.triple-controls {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr;
+    gap: 10px;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button[onclick*="'left'"], 
+button[onclick*="'right'"] {
+    background: #6c757d;
+}
+
+.all-valve-btn {
+    background: #28a745;
+}
+
+/* Add these new styles */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.nav-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.nav-card h2 {
+    margin: 0 0 10px 0;
+    color: #007bff;
+}
+
+.nav-card p {
+    margin: 0;
+    color: #666;
+}
+
+.page-nav {
+    margin-left: auto;  /* Push to the right */
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: #f0f0f0;
+}
+
+/* Pressure transducer grid layout */
+.pt-grid {
+    display: grid;
+    grid-template-columns: 2.5fr 5fr 2.5fr;
+    gap: 0px;  /* Add gap between columns */
+    height: calc(100vh - 80px);
+    padding: 10px;
+}
+
+.pt-line-container, .pt-agg-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    overflow: hidden;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 0px;
+}
+
+.pt-stat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    overflow: hidden; /* Remove scrolling */
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 0px;
+}
+
+/* Adjust the stat charts to fit container without scrolling */
+.pt-stat-chart {
+    width: 100%;
+    flex: 1;
+    min-height: 0; /* Allow charts to shrink */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#pt-subplots {
+    width: 100%;
+    height: 100%;
+    min-height: 0;  /* Allow container to shrink */
+}
+
+/* Remove individual chart styles since we're using subplots */
+.pt-line-chart, .pt-agg-chart {
+    width: 100%;
+    flex: 1;
+    min-height: 150px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Ensure the modebar (plotly controls) doesn't cause overflow */
+.modebar {
+    top: 0 !important;
+    right: 0 !important;
+}
+
+/* Add specific styles for the aggregate plot container */
+#pt-agg-plot {
+    width: 100%;
+    height: 100%;
+    min-height: 0; /* Allow container to shrink */
+} 

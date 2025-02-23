@@ -1,0 +1,182 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 10px 20px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.site-title {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: left;
+    font-weight: normal;  /* Reset font weight */
+}
+
+.blast-text {
+    font-weight: 700;  /* Make BLAST bold */
+}
+
+.page-name {
+    font-weight: normal;  /* Ensure the page name is not bold */
+}
+
+.site-title strong {
+    font-weight: 700;
+}
+
+main {
+    flex: 1;
+    min-height: 0;  /* Important for flex container */
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px;
+    height: 100%;
+}
+
+.chart-container {
+    display: grid;
+    grid-template-rows: 1fr 1fr auto;
+    gap: 10px;
+    height: 100%;
+}
+
+.plot {
+    width: 100%;
+    height: 100%;
+    min-height: 0;  /* Important for grid layout */
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.js-plotly-plot {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.valve-section {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.valve-indicators {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+.indicator {
+    height: 80px;  /* Reduced height */
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.valve-controls {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 10px;
+}
+
+.individual-controls {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+.triple-controls {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr;
+    gap: 10px;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button[onclick*="'left'"], 
+button[onclick*="'right'"] {
+    background: #6c757d;
+}
+
+.all-valve-btn {
+    background: #28a745;
+}
+
+/* Add these new styles */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.nav-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.nav-card h2 {
+    margin: 0 0 10px 0;
+    color: #007bff;
+}
+
+.nav-card p {
+    margin: 0;
+    color: #666;
+}
+
+.page-nav {
+    padding: 10px 0;
+}
+
+.nav-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+} 

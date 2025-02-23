@@ -6,20 +6,32 @@
 {% block head %}
 <script>
 const Config = {
+    PRESSURE_TRANSDUCERS: {{ config.PRESSURE_TRANSDUCERS | tojson }},
     NUM_PRESSURE_TRANSDUCERS: {{ config.NUM_PRESSURE_TRANSDUCERS }},
     PRESSURE_BOUNDARIES: {{ config.PRESSURE_BOUNDARIES | tojson }}
 };
 </script>
-<script src="{{ url_for('static', filename='js/pressure.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pt_line.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pt_agg.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pt_stat.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <nav class="page-nav">
-        <a href="{{ url_for('main.index') }}" class="nav-link">← Back to Dashboard</a>
-    </nav>
-    <div class="chart-container">
-        <div id="pt-chart" class="plot"></div>
+    <div class="pt-grid">
+        <div class="pt-line-container">
+            {% for pt in config.PRESSURE_TRANSDUCERS %}
+            <div class="pt-line-chart" style="background-color: rgba(255, 0, 0, 0.1);"></div>
+            {% endfor %}
+        </div>
+        <div class="pt-agg-container" style="background-color: rgba(0, 255, 0, 0.1);">
+            <div class="pt-agg-chart">Aggregate Chart</div>
+        </div>
+        <div class="pt-stat-container">
+            {% for pt in config.PRESSURE_TRANSDUCERS %}
+            <div class="pt-stat-chart" style="background-color: rgba(0, 0, 255, 0.1);">PT{{ loop.index }} Stats</div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %} 
