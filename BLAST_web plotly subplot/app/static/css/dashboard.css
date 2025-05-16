@@ -16,6 +16,7 @@
 /* Apply Roboto font globally */
 * {
     font-family: 'Roboto', Arial, sans-serif;  /* Added fallback fonts */
+    box-sizing: border-box; /* Add this to prevent padding/border from affecting element size */
 }
 
 body {
@@ -217,8 +218,8 @@ button[onclick*="'right'"] {
 /* Pressure transducer grid layout */
 .pt-grid {
     display: grid;
-    grid-template-columns: 2.5fr 5fr 2.5fr;
-    gap: 0px;  /* Add gap between columns */
+    grid-template-columns: 2.5fr 5.5fr 2fr;
+    gap: 10px;  /* Changed from 0px to add gap between columns */
     height: calc(100vh - 80px);
     padding: 10px;
 }
@@ -238,41 +239,66 @@ button[onclick*="'right'"] {
 .pt-stat-container {
     display: flex;
     flex-direction: column;
-    gap: 0px;
-    overflow: hidden; /* Remove scrolling */
+    gap: 10px; /* Add some gap between stat blocks */
+    overflow-y: auto; /* Allow scrolling if content overflows */
     background: white;
     border-radius: 8px;
     border: 1px solid #ddd;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 0px;
+    padding: 10px; /* Add some padding inside the container */
 }
 
-/* Adjust the stat charts to fit container without scrolling */
+.pt-stat-block {
+    background-color: #f9f9f9; /* Light background for each block */
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    /* flex: 1; Remove this to allow natural height or set a min-height if needed */
+    min-height: 120px; /* Give a minimum height to each block */
+    overflow: hidden; /* Prevent content from spilling out */
+}
+
+.pt-stat-title {
+    color: white;
+    padding: 4px 5px;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+}
+
+.pt-stat-values {
+    padding: 8px; /* Maintain overall padding */
+    font-size: 0.85rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    color: black; /* Make all text in this container black by default */
+    /* justify-content: space-around; Remove this */
+    /* We will rely on paragraph margins and container padding */
+}
+
+.pt-stat-values p {
+    margin: 6px 0; /* Slightly increase vertical margin for consistent spacing */
+}
+
+.pt-stat-values p:first-child {
+    margin-top: 0; /* Remove top margin from the first paragraph */
+}
+
+.pt-stat-values p:last-child {
+    margin-bottom: 0; /* Remove bottom margin from the last paragraph */
+}
+
+.pt-stat-values strong {
+    color: black; /* Ensure strong tags are also explicitly black */
+}
+
+/* Remove old .pt-stat-chart styles if they are no longer used directly for these blocks */
 .pt-stat-chart {
-    width: 100%;
-    flex: 1;
-    min-height: 0; /* Allow charts to shrink */
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
-#pt-subplots {
-    width: 100%;
-    height: 100%;
-    min-height: 0;  /* Allow container to shrink */
-}
-
-/* Remove individual chart styles since we're using subplots */
-.pt-line-chart, .pt-agg-chart {
-    width: 100%;
-    flex: 1;
-    min-height: 150px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    box-sizing: border-box;
+    /* If this class is still used elsewhere, keep its styles,
+       otherwise, it might be redundant for the new structure. */
 }
 
 /* Ensure the modebar (plotly controls) doesn't cause overflow */
@@ -286,4 +312,285 @@ button[onclick*="'right'"] {
     width: 100%;
     height: 100%;
     min-height: 0; /* Allow container to shrink */
+}
+
+/* Thermocouple and Load Cell Page Layout */
+.tc-lc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 50:50 split for two columns */
+    gap: 10px;
+    height: calc(100vh - 80px); /* Was 100%, changed to match pt-grid for consistent viewport usage */
+    padding: 10px;
+}
+
+.tc-lc-column {
+    display: grid;
+    grid-template-rows: 8fr 2fr; /* 80:20 split for rows within a column, was 7fr 3fr */
+    gap: 10px;
+    min-height: 0; /* Important for nested grids/flex */
+}
+
+.tc-lc-row-top,
+.tc-lc-row-bottom {
+    /* .plot class already defines background, border, radius, shadow, overflow */
+    min-height: 0; /* Ensure content fits and scrolls if necessary */
+    display: flex; /* To help center content or manage internal layout */
+    flex-direction: column; /* Stack children vertically if needed */
+    /* padding: 10px; */ /* Removed padding to allow content to fill, similar to pt-line-container */
+}
+
+/* Ensure plot divs inside these containers also take full space if they are direct children */
+.tc-lc-row-top > div,
+.tc-lc-row-bottom > div {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Styling for placeholder text */
+#tc-chart,
+#lc-chart,
+#tc-stats-container > div,
+#lc-stats-container > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #aaa;
+}
+
+/* Grid for TC subplots and aggregate plot */
+#tc-charts-grid {
+    display: grid;
+    grid-template-columns: 2.5fr 5.5fr; /* Similar to pt-grid, adjust as needed */
+    gap: 10px;
+    padding: 0; /* The parent .tc-lc-row-top might have padding if needed */
+    height: 100%;
+    width: 100%;
+}
+
+/* Ensure the containers within tc-charts-grid and their plot divs take full space */
+#tc-subplots-container,
+#tc-agg-container,
+#tc-subplots-plot,
+#tc-agg-plot {
+    width: 100%;
+    height: 100%;
+    min-height: 0; /* Important for flex/grid children */
+    /* background, border etc. are inherited from .plot or .pt-line-container/.pt-agg-container */
+}
+
+/* Remove placeholder styling for old #tc-chart if it's no longer used */
+/* #tc-chart { ... } */
+
+/* Thermocouple Stats Layout */
+.tc-stat-grid {
+    display: flex; 
+    align-items: stretch; /* Explicitly set to stretch items (stat blocks) vertically */
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto; 
+}
+
+.tc-stat-block {
+    background-color: #f9f9f9; 
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    /* min-height: 0; */ /* Let's test removing this or relying on height: 100% */
+    height: 100%; /* Explicitly set height to fill parent */
+    overflow: hidden; 
+    flex: 1; 
+    min-width: 150px; /* Added to ensure a minimum reasonable width */
+}
+
+/* Title and Values styling can reuse .pt-stat-title and .pt-stat-values for now,
+   but if specific tweaks are needed for TC stats, they can be added here or by
+   creating .tc-stat-title, .tc-stat-values classes and applying them in the HTML.
+   The current HTML reuses .pt-stat-title and .pt-stat-values.
+*/
+
+/* Adjust font sizes for the smaller stat blocks if needed */
+.tc-stat-block .pt-stat-title {
+    font-size: 0.8rem; /* Slightly smaller title */
+    padding: 3px 5px;
+}
+
+.tc-stat-block .pt-stat-values {
+    font-size: 0.75rem; /* Slightly smaller text */
+    padding: 6px;
+}
+
+.tc-stat-block .pt-stat-values p {
+    margin: 4px 0; /* Adjust margins for tighter packing */
+}
+
+/* Grid for LC subplots and aggregate plot (similar to tc-charts-grid) */
+#lc-charts-grid {
+    display: grid;
+    grid-template-columns: 5.5fr 2.5fr; /* Agg on left (wider), Subplots on right (narrower) - reversed from TC */
+    gap: 10px;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+/* Ensure the containers within lc-charts-grid and their plot divs take full space */
+#lc-agg-container, /* For LC aggregate plot */
+#lc-subplots-container, /* For LC subplots */
+#lc-agg-plot,
+#lc-subplots-plot {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Load Cell Stats Layout (similar to TC stats) */
+.lc-stat-grid {
+    display: flex; 
+    align-items: stretch; 
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto; 
+}
+
+.lc-stat-block {
+    background-color: #f9f9f9; 
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    height: 100%; 
+    overflow: hidden; 
+    flex: 1; 
+    min-width: 150px; 
+}
+
+/* Adjust font sizes for the LC stat blocks if needed (reusing pt-stat-title/values for now) */
+.lc-stat-block .pt-stat-title {
+    font-size: 0.8rem; 
+    padding: 3px 5px;
+}
+
+.lc-stat-block .pt-stat-values {
+    font-size: 0.75rem; 
+    padding: 6px;
+}
+
+.lc-stat-block .pt-stat-values p {
+    margin: 4px 0; 
+}
+
+/* Valve Page Layout */
+.valve-grid-container {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);    /* 2 rows */
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    gap: 10px;
+    height: calc(100vh - 80px); /* Full available height, similar to other pages */
+    padding: 10px;
+}
+
+.valve-block {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: flex-start; 
+    font-size: 1rem;
+    color: #333;
+    min-height: 0; 
+}
+
+.valve-title {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 8px; /* Reduced margin a bit */
+    text-align: center;
+    width: 100%;
+    flex-shrink: 0; /* Prevent title from shrinking */
+}
+
+.valve-state-container {
+    display: flex;
+    flex-direction: column; 
+    width: 100%;
+    flex-grow: 1; /* Takes up remaining vertical space */
+    justify-content: space-evenly; /* Distribute the two state displays */
+    gap: 8px; 
+}
+
+.state-display { /* New class for each label+state unit */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center label and block horizontally */
+    flex-grow: 1; /* Make each state display take up available space */
+    /* border: 1px dashed blue; /* For debugging layout */
+    padding: 5px 0; /* Add some padding */
+    justify-content: center; /* Center label and block vertically within this container */
+}
+
+.valve-state-label {
+    font-size: 0.8rem;
+    text-align: center; /* Label centered above block */
+    margin-bottom: 5px; /* Space between label and its block */
+    flex-shrink: 0; /* Prevent label from shrinking */
+}
+
+.valve-state {
+    width: 85%;  /* Make state block wide */
+    min-height: 60px; /* Increased minimum height */
+    flex-grow: 1; /* Allow block to grow tall within its .state-display parent */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    /* background-color: #eee; /* Default, will be overridden by .on/.off */
+}
+
+.valve-state.on {
+    background-color: #0072B2; /* Blue for ON */
+}
+
+.valve-state.off {
+    background-color: #E69F00; /* Orange for OFF */
+}
+
+/* Style for empty valve blocks if needed, or rely on &nbsp; */
+.valve-block:empty {
+    /* background-color: #f8f9fa; /* Lighter background for empty blocks */
+    /* border-style: dashed; */
+}
+
+/* BLAST Phoenix Card Styles */
+.blast-phoenix-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(135deg, #D55E00, #000000);  /* Changed to a more reddish-orange */
+    border-radius: 6px;
+    padding: 20px;
+    color: white;
+}
+
+.blast-phoenix-card .blast-text {
+    font-size: 4rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #000000;  /* Changed to match the gradient start color */
+}
+
+.blast-phoenix-card .phoenix-text {
+    font-size: 3rem;
+    font-weight: 500;
+    opacity: 0.9;
+    color: #FFFFFF;
 } 

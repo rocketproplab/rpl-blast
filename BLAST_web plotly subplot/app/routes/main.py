@@ -3,6 +3,7 @@ from app.config import Config
 from app.data_sources.simulator import Simulator
 from app.data_sources.serial_reader import SerialReader
 import time
+from functools import lru_cache
 
 main_bp = Blueprint('main', __name__)
 config = Config()  # Create instance
@@ -15,6 +16,10 @@ if not hasattr(main_bp, 'data_source'):
         main_bp.data_source = SerialReader(config.SERIAL_PORT, config.SERIAL_BAUDRATE)
     
     main_bp.data_source.initialize()
+
+# Remove the cache decorator
+def get_cached_sensor_data():
+    return main_bp.data_source.read_data()
 
 @main_bp.route('/')
 def index():
@@ -41,12 +46,36 @@ def get_data():
     sensor_type = request.args.get('type', 'all')
     sensor_data = main_bp.data_source.read_data()
     
+    # print(f"--- DEBUG: routes.py /data: sensor_data object is: {sensor_data}, type: {type(sensor_data)} ---")
     if sensor_data:
+    #     print(f"--- DEBUG: routes.py /data: sensor_data object dir(): {dir(sensor_data)} ---")
+    #     if hasattr(sensor_data, 'fcv_actual'):
+    #         print(f"--- DEBUG: sensor_data HAS fcv_actual: {getattr(sensor_data, 'fcv_actual')} ---")
+    #     else:
+    #         print(f"--- DEBUG: sensor_data DOES NOT HAVE fcv_actual ---")
+    #     if hasattr(sensor_data, 'fcv_expected'):
+    #         print(f"--- DEBUG: sensor_data HAS fcv_expected: {getattr(sensor_data, 'fcv_expected')} ---")
+    #     else:
+    #         print(f"--- DEBUG: sensor_data DOES NOT HAVE fcv_expected ---")
+    #     if hasattr(sensor_data, 'fcv'): # Check for the old attribute
+    #         print(f"--- DEBUG: sensor_data HAS OLD fcv: {getattr(sensor_data, 'fcv')} ---")
+    #     else:
+    #         print(f"--- DEBUG: sensor_data DOES NOT HAVE OLD fcv ---")
+            
         data_dict = sensor_data.to_dict()
+        # print(f"--- DEBUG: routes.py /data: data_dict from to_dict(): {data_dict} ---") # Optional: log the dict
+
         if sensor_type != 'all':
-            # Return only the requested sensor type data
-            return jsonify({'value': {sensor_type: data_dict[sensor_type]}})
-        return jsonify({'value': data_dict})
+            return jsonify({
+                'value': {sensor_type: data_dict.get(sensor_type, 'KEY_NOT_FOUND')}, # Added .get for safety
+                'timestamp': data_dict['timestamp']
+            })
+        return jsonify({
+            'value': data_dict,
+            'timestamp': data_dict['timestamp']
+        })
+    
+    print("!!! routes.py /data is returning {'value': None} because sensor_data was Falsy !!!")
     return jsonify({'value': None})
 
 @main_bp.route('/toggle_valve', methods=['POST'])

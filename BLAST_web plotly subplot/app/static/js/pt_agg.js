@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const WINDOW_SIZE = 10; // Size of the time window in seconds
     const sensorData = {
         x: [],
         y: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => [])
@@ -15,93 +16,73 @@ document.addEventListener('DOMContentLoaded', function() {
     const traces = Config.PRESSURE_TRANSDUCERS.map((pt, index) => ({
         x: [],
         y: [],
-        type: 'scatter',
+        ...PT_PLOT_CONFIG.trace,
         name: pt.name,
-        mode: 'lines',
-        line: { width: 2 }
+        line: {
+            ...PT_PLOT_CONFIG.trace.line,
+            color: Config.PRESSURE_TRANSDUCERS[index].color
+        }
     }));
+
+    // Determine overall min and max for Y-axis range from all PTs
+    let overallMinY = Infinity;
+    let overallMaxY = -Infinity;
+    Config.PRESSURE_TRANSDUCERS.forEach(pt => {
+        if (pt.min_value < overallMinY) overallMinY = pt.min_value;
+        if (pt.max_value > overallMaxY) overallMaxY = pt.max_value;
+    });
 
     // Create layout
     const layout = {
+        ...PT_PLOT_CONFIG.layout,
         showlegend: true,
         legend: {
+            ...PT_PLOT_CONFIG.legend,
             x: 1,
             xanchor: 'right',
-            y: 1
+            y: 1,
+            orientation: 'v'
         },
         width: rect.width - paddingX,
         height: rect.height - paddingY,
-        margin: { t: 50, r: 70, b: 60, l: 70 },
-        paper_bgcolor: 'white',
-        plot_bgcolor: 'white',
-        font: {
-            family: 'Roboto, sans-serif'
-        },
         title: {
-            text: 'Composite Pressure Readings',
-            font: { 
-                size: 16,
-                family: 'Roboto, sans-serif'
-            }
+            ...PT_PLOT_CONFIG.title,
+            text: 'Composite Pressure Readings'
         },
         xaxis: {
+            ...PT_PLOT_CONFIG.axis,
             title: {
-                text: 'Time (s)',
-                standoff: 20,
-                font: { size: 12 },
+                ...PT_PLOT_CONFIG.axis.title,
+                text: 'Time'
             },
             showgrid: true,
-            gridcolor: '#eee',
-            range: [0, 30],
-            fixedrange: true
+            gridcolor: '#f0f0f0',
+            zeroline: true,
+            zerolinecolor: '#f0f0f0',
+            range: [0, WINDOW_SIZE] // Initialize with window size
         },
         yaxis: {
+            ...PT_PLOT_CONFIG.axis,
             title: {
-                text: 'Pressure (psi)',
-                standoff: 20,
-                font: { size: 12 },
+                ...PT_PLOT_CONFIG.axis.title,
+                text: 'Pressure (psi)'
             },
             showgrid: true,
-            gridcolor: '#eee',
-            range: [0, 1000],
-            fixedrange: true
+            gridcolor: '#f0f0f0',
+            zeroline: true,
+            zerolinecolor: '#f0f0f0',
+            range: [overallMinY, overallMaxY], // Explicitly set Y-axis range here
+            tickvals: generateTickVals(overallMinY, overallMaxY),
+            ticktext: generateTickVals(overallMinY, overallMaxY).map(String)
         },
-        shapes: [
-            // Safe zone
-            {
-                type: 'rect',
-                x0: 0,
-                x1: 30,
-                y0: 0,
-                y1: Config.PRESSURE_BOUNDARIES.safe[1],
-                fillcolor: 'rgba(0, 255, 0, 0.2)',
-                line: { width: 0 }
-            },
-            // Warning zone
-            {
-                type: 'rect',
-                x0: 0,
-                x1: 30,
-                y0: Config.PRESSURE_BOUNDARIES.safe[1],
-                y1: Config.PRESSURE_BOUNDARIES.warning[1],
-                fillcolor: 'rgba(255, 165, 0, 0.2)',
-                line: { width: 0 }
-            },
-            // Danger zone
-            {
-                type: 'rect',
-                x0: 0,
-                x1: 30,
-                y0: Config.PRESSURE_BOUNDARIES.warning[1],
-                y1: Config.PRESSURE_BOUNDARIES.danger[1],
-                fillcolor: 'rgba(255, 0, 0, 0.2)',
-                line: { width: 0 }
-            }
-        ]
+        shapes: [] // Will be populated with zone rectangles
     };
 
-    // Initialize plot
-    Plotly.newPlot('pt-agg-plot', traces, layout);
+    // Initialize the plot
+    Plotly.newPlot('pt-agg-plot', traces, layout, {
+        responsive: true,
+        ...PT_PLOT_CONFIG.hover
+    });
 
     // Update chart size on window resize
     window.addEventListener('resize', () => {
@@ -116,12 +97,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Start time for x-axis
     const startTime = Date.now();
 
     function updateChart() {
         const currentTime = (Date.now() - startTime) / 1000;
-        const xrange = [Math.max(0, currentTime - 30), currentTime];
+        const windowStart = Math.max(0, currentTime - WINDOW_SIZE);
+        const windowEnd = currentTime;
 
         fetch('/data?type=pt')
             .then(response => response.json())
@@ -133,38 +114,49 @@ document.addEventListener('DOMContentLoaded', function() {
                         sensorData.y[i].push(value);
                     });
 
-                    // Update plot with new data
-                    Plotly.update('pt-agg-plot', {
-                        x: sensorData.y.map(() => sensorData.x),
-                        y: sensorData.y
-                    }, {
-                        shapes: [
-                            {
-                                x0: xrange[0],
-                                x1: xrange[1],
-                                y0: 0,
-                                y1: Config.PRESSURE_BOUNDARIES.safe[1]
-                            },
-                            {
-                                x0: xrange[0],
-                                x1: xrange[1],
-                                y0: Config.PRESSURE_BOUNDARIES.safe[1],
-                                y1: Config.PRESSURE_BOUNDARIES.warning[1]
-                            },
-                            {
-                                x0: xrange[0],
-                                x1: xrange[1],
-                                y0: Config.PRESSURE_BOUNDARIES.warning[1],
-                                y1: Config.PRESSURE_BOUNDARIES.danger[1]
-                            }
-                        ],
-                        'xaxis.range': xrange
-                    });
-
-                    // Keep only last 300 points
-                    if (sensorData.x.length > 300) {
+                    // Trim data outside the window
+                    while (sensorData.x.length > 0 && sensorData.x[0] < windowStart) {
                         sensorData.x.shift();
                         sensorData.y.forEach(arr => arr.shift());
+                    }
+
+                    // Update shapes for the moving time window using the first PT's config for zones
+                    let newShapes = [];
+                    if (Config.PRESSURE_TRANSDUCERS.length > 0) {
+                        const firstPTConfig = Config.PRESSURE_TRANSDUCERS[0];
+                        newShapes = [
+                            // Green Zone
+                            { type: 'rect', x0: windowStart, x1: windowEnd, 
+                              y0: firstPTConfig.min_value, y1: firstPTConfig.warning_value, 
+                              fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 }, layer: 'below' },
+                            // Orange Zone
+                            { type: 'rect', x0: windowStart, x1: windowEnd, 
+                              y0: firstPTConfig.warning_value, y1: firstPTConfig.danger_value, 
+                              fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 }, layer: 'below' },
+                            // Red Zone
+                            { type: 'rect', x0: windowStart, x1: windowEnd, 
+                              y0: firstPTConfig.danger_value, y1: firstPTConfig.max_value, 
+                              fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }, layer: 'below' }
+                    ];
+                    }
+
+                    // Update the plot with new data and ranges
+                    Plotly.update('pt-agg-plot', {
+                        x: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => [...sensorData.x]),
+                        y: sensorData.y
+                    }, {
+                        shapes: newShapes,
+                        'xaxis.range': [windowStart, windowEnd]
+                    });
+
+                    // Now, call the function in pt_line.js to update subplots with the SAME data
+                    if (typeof window.updateAllSubPlots === 'function') {
+                        window.updateAllSubPlots(currentTime, data.value.pt);
+                    }
+
+                    // Also, call the function in pt_stats.js to update stats with the SAME data
+                    if (typeof window.updateAllStats === 'function') {
+                        window.updateAllStats(currentTime, data.value.pt);
                     }
                 }
             })
@@ -174,3 +166,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update chart every 100ms (10 Hz)
     setInterval(updateChart, 100);
 });
+
+function generateTickVals(axisMin, axisMax) {
+    const ticks = [axisMin, axisMax];
+    let current = Math.ceil(axisMin / 100) * 100;
+    while (current < axisMax) {
+        if (current > axisMin) {
+            ticks.push(current);
+        }
+        current += 100;
+    }
+    // Filter out ticks outside the explicit range, then sort.
+    // Ensure axisMin and axisMax are part of the ticks if they are not multiples of 100
+    // and fall within the generated tick sequence before being potentially filtered out.
+    // The initial push of axisMin and axisMax handles this.
+    return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+}

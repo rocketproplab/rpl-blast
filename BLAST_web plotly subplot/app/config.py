@@ -23,7 +23,7 @@ class Config:
         # Flow control valves
         self.FLOW_CONTROL_VALVES = config['subpage3']['flow_control_valves']
         self.NUM_FLOW_CONTROL_VALVES = len(self.FLOW_CONTROL_VALVES)
-        self.VALVE_GROUPS = config['subpage3']['flow_control_valve_groups']
+        # self.VALVE_GROUPS = config['subpage3'].get('flow_control_valve_groups', []) # Modified to safely get or default
 
     # Simulator configuration
     SIMULATOR_MIN_VALUE = 300
@@ -40,6 +40,12 @@ class Config:
         'safe': [0, 500],
         'warning': [500, 750],
         'danger': [750, 1000]
+    }
+
+    LOAD_CELL_BOUNDARIES = {
+        'safe': [0, 250],      # Assuming based on LC1 warning_value in YAML
+        'warning': [250, 400], # Assuming based on LC1 warning/danger_value in YAML
+        'danger': [400, 500]   # Assuming based on LC1 danger/max_value in YAML
     }
 
     SECRET_KEY = 'your-secret-key' 

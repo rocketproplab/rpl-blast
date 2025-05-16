@@ -1,5 +1,0 @@
-flask==2.3.3
-werkzeug==2.3.7
-pyserial==3.5
-numpy==1.21.2
-plotly==5.3.1 

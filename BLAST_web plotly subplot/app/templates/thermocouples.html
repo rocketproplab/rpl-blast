@@ -1,24 +1,88 @@
 {% extends "base.html" %}
 
-{% block title %}BLAST | Thermocouples{% endblock %}
-{% block header_title %}Thermocouples{% endblock %}
+{% block title %}BLAST | Thermocouples & Load Cells{% endblock %}
+{% block header_title %}Thermocouples & Load Cells{% endblock %}
 
 {% block head %}
 <script>
 const Config = {
     THERMOCOUPLES: {{ config.THERMOCOUPLES | tojson }},
     NUM_THERMOCOUPLES: {{ config.NUM_THERMOCOUPLES }},
+    TEMPERATURE_BOUNDARIES: {{ config.TEMPERATURE_BOUNDARIES | tojson }},
     LOAD_CELLS: {{ config.LOAD_CELLS | tojson }},
-    NUM_LOAD_CELLS: {{ config.NUM_LOAD_CELLS }}
+    NUM_LOAD_CELLS: {{ config.NUM_LOAD_CELLS }},
+    LOAD_CELL_BOUNDARIES: {{ config.LOAD_CELL_BOUNDARIES | tojson }}
 };
 </script>
-<script src="{{ url_for('static', filename='js/thermocouples.js') }}"></script>
+{# General plot config #}
+<script src="{{ url_for('static', filename='js/pt_config.js') }}"></script> 
+{# Thermocouple Scripts #}
+<script src="{{ url_for('static', filename='js/tc_subplots.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tc_agg.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tc_stats.js') }}"></script>
+{# Load Cell Scripts #}
+<script src="{{ url_for('static', filename='js/lc_agg.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lc_subplots.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lc_stats.js') }}"></script>
+{# Master data fetcher #}
+<script src="{{ url_for('static', filename='js/get_data.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="chart-container">
-        <div id="tc-chart" class="plot"></div>
+    <div class="tc-lc-grid">
+        {# Left Column - Thermocouples #}
+        <div class="tc-lc-column" id="tc-column">
+            <div class="tc-lc-row-top plot" id="tc-charts-grid"> 
+                <div class="pt-line-container" id="tc-subplots-container"> 
+                    <div id="tc-subplots-plot"></div> 
+                </div>
+                <div class="pt-agg-container" id="tc-agg-container"> 
+                    <div id="tc-agg-plot"></div> 
+                </div>
+            </div>
+            <div class="tc-lc-row-bottom plot" id="tc-stats-container">
+                <div class="tc-stat-grid">
+                    {% for tc in config.THERMOCOUPLES %}
+                    <div class="tc-stat-block" id="tc-stat-{{ tc.name | lower | replace(' ', '-') }}">
+                        <div class="pt-stat-title" style="background-color: {{ tc.color }};">{{ tc.name }}</div>
+                        <div class="pt-stat-values">
+                            <p><strong>Latest:</strong> <span class="stat-latest">N/A</span> °C</p>
+                            <p><strong>Avg (5s):</strong> <span class="stat-avg">N/A</span> °C</p>
+                            <p><strong>Rate:</strong> <span class="stat-rate">N/A</span> °C/5s</p>
+                            <p><strong>Max:</strong> <span class="stat-max">N/A</span> °C</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {# Right Column - Load Cells #}
+        <div class="tc-lc-column" id="lc-column">
+            <div class="tc-lc-row-top plot" id="lc-charts-grid"> {# Now a grid container #}
+                <div class="pt-agg-container" id="lc-agg-container"> {# Aggregate on the LEFT for LCs #}
+                    <div id="lc-agg-plot"></div> 
+                </div>
+                <div class="pt-line-container" id="lc-subplots-container"> {# Subplots on the RIGHT for LCs #}
+                    <div id="lc-subplots-plot"></div>
+                </div>
+            </div>
+            <div class="tc-lc-row-bottom plot" id="lc-stats-container">
+                <div class="lc-stat-grid"> {# New class for LC stats grid #}
+                    {% for lc in config.LOAD_CELLS %}
+                    <div class="lc-stat-block" id="lc-stat-{{ lc.name | lower | replace(' ', '-') }}"> {# New class for LC stat block #}
+                        <div class="pt-stat-title" style="background-color: {{ lc.color }};">{{ lc.name }}</div>
+                        <div class="pt-stat-values">
+                            <p><strong>Latest:</strong> <span class="stat-latest">N/A</span> Units</p> {# Unit unclear #}
+                            <p><strong>Avg (5s):</strong> <span class="stat-avg">N/A</span> Units</p>
+                            <p><strong>Rate:</strong> <span class="stat-rate">N/A</span> Units/5s</p>
+                            <p><strong>Max:</strong> <span class="stat-max">N/A</span> Units</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %} 
