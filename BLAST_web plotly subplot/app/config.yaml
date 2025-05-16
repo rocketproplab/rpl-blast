@@ -33,14 +33,14 @@ subpage1:
       max_value: 500
       warning_value: 250
       danger_value: 400
-    - name: "Pressure Transducer 4"
+    - name: "LNG Downstream"
       id: "pt4"
       color: "#009E73"  # Teal
       min_value: -50
       max_value: 500
       warning_value: 250
       danger_value: 400
-    - name: "Pressure Transducer 5"
+    - name: "LOX Downstream"
       id: "pt5"
       color: "#CC79A7"  # Pink
       min_value: -50
@@ -67,7 +67,7 @@ subpage2:
       max_value: 1000
       warning_value: 500
       danger_value: 800
-    - name: "Thermocouple 3"
+    - name: "Cryo Thermocouple (Cold Flow)"
       id: "tc3"
       color: "#D55E00"  # Dark Orange
       min_value: 0
@@ -102,17 +102,17 @@ subpage3:
   title: "Flow Control Valves"
   description: "Flow control measurements from flow control valves"
   flow_control_valves:
-    - name: "Flow Control Valve 1"
+    - name: "LNG Vent"
       id: "fv1"
-    - name: "Flow Control Valve 2"
+    - name: "LOX Vent"
       id: "fv2"
-    - name: "Flow Control Valve 3"
+    - name: "GN2 Vent"
       id: "fv3"
-    - name: "Flow Control Valve 4"
+    - name: "LNG Flow"
       id: "fv4"
-    - name: "Flow Control Valve 5"
+    - name: "LOX Flow"
       id: "fv5"
-    - name: "Flow Control Valve 6"
+    - name: "GN2-LNG Flow"
       id: "fv6"
-    - name: "Flow Control Valve 7"
+    - name: "GN2-LOX Flow"
       id: "fv7"
