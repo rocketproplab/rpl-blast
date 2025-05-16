@@ -575,17 +575,19 @@ button[onclick*="'right'"] {
     justify-content: center;
     height: 100%;
     width: 100%;
-    background: linear-gradient(135deg, #D55E00, #000000);  /* Changed to a more reddish-orange */
+    background: linear-gradient(135deg, #D55E00, #000000);
     border-radius: 6px;
     padding: 20px;
     color: white;
+    font-family: 'Roboto', Arial, sans-serif;
 }
 
 .blast-phoenix-card .blast-text {
     font-size: 4rem;
     font-weight: 700;
     margin-bottom: 5px;
-    color: #000000;  /* Changed to match the gradient start color */
+    color: #000000;
+    font-family: 'Roboto', Arial, sans-serif;
 }
 
 .blast-phoenix-card .phoenix-text {
@@ -593,4 +595,5 @@ button[onclick*="'right'"] {
     font-weight: 500;
     opacity: 0.9;
     color: #FFFFFF;
+    font-family: 'Roboto', Arial, sans-serif;
 } 
