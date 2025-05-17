@@ -79,12 +79,12 @@ class SerialReader(DataSource):
     def initialize(self):
         try:
             self.serial = serial.Serial(
-                port=Config.SERIAL_PORT,
-                baudrate=Config.SERIAL_BAUDRATE,
+                port=self.config.SERIAL_PORT,
+                baudrate=self.config.SERIAL_BAUDRATE,
                 timeout=0.1
             )
             time.sleep(2)  # Wait for serial connection to stabilize
-            logger.info(f"Serial connection established on {Config.SERIAL_PORT}")
+            logger.info(f"Serial connection established on {self.config.SERIAL_PORT}")
         except Exception as e:
             logger.error(f"Failed to initialize serial connection: {e}")
             raise

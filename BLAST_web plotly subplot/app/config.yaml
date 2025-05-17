@@ -1,10 +1,10 @@
 # BLAST Web and Data Configuration
 
 # Data Source
-data_source: "simulator"  # or "serial"
+data_source: "serial"  # or "simulator"
 
 # Serial Configuration
-serial_port: "/dev/cu.usbmodem1201"
+serial_port: "/dev/cu.usbmodem21201"
 serial_baudrate: 9600
 
 # subpage 1
