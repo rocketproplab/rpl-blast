@@ -4,7 +4,7 @@
 data_source: "serial"  # or "simulator"
 
 # Serial Configuration
-serial_port: "/dev/cu.usbmodem21201"
+serial_port: "/dev/cu.usbmodem21301"
 serial_baudrate: 9600
 
 # subpage 1
