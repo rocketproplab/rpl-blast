@@ -1,0 +1,15 @@
+blinker==1.9.0
+click==8.1.8
+Flask==2.3.3
+importlib_metadata==8.6.1
+itsdangerous==2.2.0
+Jinja2==3.1.5
+MarkupSafe==3.0.2
+numpy==1.21.2
+plotly==5.3.1
+pyserial==3.5
+PyYAML @ file:///Users/runner/miniforge3/conda-bld/pyyaml_1737454732336/work
+six==1.17.0
+tenacity==9.0.0
+Werkzeug==2.3.7
+zipp==3.21.0

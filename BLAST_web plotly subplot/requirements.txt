@@ -2,4 +2,14 @@ flask==2.3.3
 werkzeug==2.3.7
 pyserial==3.5
 numpy==1.21.2
-plotly==5.3.1 
+plotly==5.3.1
+blinker==1.9.0
+click==8.1.8
+importlib_metadata==8.6.1
+itsdangerous==2.2.0
+Jinja2==3.1.5
+MarkupSafe==3.0.2
+PyYAML>=6.0.1
+six==1.17.0
+tenacity==9.0.0
+zipp==3.21.0 
