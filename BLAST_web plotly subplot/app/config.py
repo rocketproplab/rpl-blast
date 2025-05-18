@@ -18,7 +18,7 @@ class Config:
                 'max_psi': 5000
             },
             'other': {
-                'min_voltage': 0.0,
+                'min_voltage': 1.0,
                 'max_voltage': 5.0,
                 'max_psi': 1000
             }
