@@ -125,6 +125,16 @@ class SerialReader(DataSource):
 
         return sensor_data
 
+    def _convert_pt_voltage_to_psi(self, value, pt_name):
+        """Convert PT voltage reading to PSI"""
+        if pt_name == "GN2":
+            conv = self.config.PT_CONVERSION['GN2']
+        else:
+            conv = self.config.PT_CONVERSION['other']
+            
+        return (((value/1023*5) - conv['min_voltage']) / 
+                (conv['max_voltage'] - conv['min_voltage'])) * conv['max_psi']
+
     def _parse_serial_data(self, raw_data):
         """Parse incoming JSON serial data and update sensor values"""
         try:
@@ -145,9 +155,11 @@ class SerialReader(DataSource):
             
             # Update pressure transducer data
             if 'pt' in value:
-                for i, val in enumerate(value['pt']):
+                for i, voltage in enumerate(value['pt']):
                     if i < self.config.NUM_PRESSURE_TRANSDUCERS:
-                        self.pt_data[i] = float(val)
+                        # Convert voltage to PSI based on PT type
+                        pt_name = self.config.PRESSURE_TRANSDUCERS[i]['name']
+                        self.pt_data[i] = self._convert_pt_voltage_to_psi(float(voltage), pt_name)
 
             # Update thermocouple data
             if 'tc' in value:

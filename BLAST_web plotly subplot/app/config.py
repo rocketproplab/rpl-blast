@@ -10,6 +10,20 @@ class Config:
         self.SERIAL_PORT = config['serial_port']
         self.SERIAL_BAUDRATE = config['serial_baudrate']
         
+        # PT conversion parameters
+        self.PT_CONVERSION = {
+            'GN2': {
+                'min_voltage': 0.5,
+                'max_voltage': 4.5,
+                'max_psi': 5000
+            },
+            'other': {
+                'min_voltage': 0.0,
+                'max_voltage': 5.0,
+                'max_psi': 1000
+            }
+        }
+        
         # Pressure transducers
         self.PRESSURE_TRANSDUCERS = config['subpage1']['pressure_transducers']
         self.NUM_PRESSURE_TRANSDUCERS = len(self.PRESSURE_TRANSDUCERS)
