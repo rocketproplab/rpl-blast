@@ -132,8 +132,9 @@ class SerialReader(DataSource):
         else:
             conv = self.config.PT_CONVERSION['other']
             
-        return (((value/1023*5) - conv['min_voltage']) / 
-                (conv['max_voltage'] - conv['min_voltage'])) * conv['max_psi']
+        # return (((value/1023*5) - conv['min_voltage']) / 
+                # (conv['max_voltage'] - conv['min_voltage'])) * conv['max_psi']
+        return value - conv['offset']
 
     def _parse_serial_data(self, raw_data):
         """Parse incoming JSON serial data and update sensor values"""

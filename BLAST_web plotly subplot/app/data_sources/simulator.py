@@ -30,9 +30,9 @@ class Simulator(DataSource):
         if current_time - self.last_update >= self.update_interval:
             self.last_update = current_time
             
-            pt_data = [self.rng.uniform(conf['min'], conf['max']) for conf in self.pt_configs]
-            tc_data = [self.rng.uniform(conf['min'], conf['max']) for conf in self.tc_configs]
-            lc_data = [self.rng.uniform(conf['min'], conf['max']) for conf in self.lc_configs]
+            pt_data = [self.rng.uniform(conf['min'] + conf['max'] * 0.3, conf['max'] * 0.7) for conf in self.pt_configs]
+            tc_data = [self.rng.uniform(conf['min'] + conf['max'] * 0.3, conf['max'] * 0.7) for conf in self.tc_configs]
+            lc_data = [self.rng.uniform(conf['min'] + conf['max'] * 0.3, conf['max'] * 0.7) for conf in self.lc_configs]
             
             # Occasionally toggle random valve states
             if self.rng.random() < 0.20:  # 20% chance each update

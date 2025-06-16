@@ -15,12 +15,14 @@ class Config:
             'GN2': {
                 'min_voltage': 0.5,
                 'max_voltage': 4.5,
-                'max_psi': 5000
+                'max_psi': 5000,
+                'offset': 28.0,
             },
             'other': {
                 'min_voltage': 1.0,
                 'max_voltage': 5.0,
-                'max_psi': 1000
+                'max_psi': 1000,
+                'offset': 11.8,
             }
         }
         

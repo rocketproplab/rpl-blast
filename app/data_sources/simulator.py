@@ -31,15 +31,15 @@ class Simulator(DataSource):
         pass
     
     def read_data(self) -> SensorData:
-        pt_data = [self.rng.uniform(conf['min'], conf['max']) for conf in self.pt_configs]
-        tc_data = [self.rng.uniform(conf['min'], conf['max']) for conf in self.tc_configs]
-        lc_data = [self.rng.uniform(conf['min'], conf['max']) for conf in self.lc_configs]
+        pt_data = [self.rng.uniform(conf['min'] + conf['max'] * 0.3, conf['max'] * 0.7) for conf in self.pt_configs]
+        tc_data = [self.rng.uniform(conf['min'] + conf['max'] * 0.3, conf['max'] * 0.7) for conf in self.tc_configs]
+        lc_data = [self.rng.uniform(conf['min'] + conf['max'] * 0.3, conf['max'] * 0.7) for conf in self.lc_configs]
         
         if self.config.NUM_FLOW_CONTROL_VALVES > 0:
             for i in range(self.config.NUM_FLOW_CONTROL_VALVES):
-                if self.rng.random() < 0.10: 
+                if self.rng.random() < 0.20: 
                     self.fcv_actual_states[i] = not self.fcv_actual_states[i]
-                if self.rng.random() < 0.05: 
+                if self.rng.random() < 0.10: 
                     self.fcv_expected_states[i] = not self.fcv_expected_states[i]
         
         sensor_data_obj = SensorData(
