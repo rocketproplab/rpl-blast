@@ -16,13 +16,13 @@ class Config:
                 'min_voltage': 0.5,
                 'max_voltage': 4.5,
                 'max_psi': 5000,
-                'offset': 28.0,
+                'offset': -23.55,
             },
             'other': {
                 'min_voltage': 1.0,
                 'max_voltage': 5.0,
                 'max_psi': 1000,
-                'offset': 11.8,
+                'offset': -8.55,
             }
         }
         

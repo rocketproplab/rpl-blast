@@ -3,6 +3,7 @@ from app.config import Config
 from app.data_sources.simulator import Simulator
 from app.data_sources.serial_reader import SerialReader
 import time
+import os
 from functools import lru_cache
 
 main_bp = Blueprint('main', __name__)
@@ -14,8 +15,8 @@ if not hasattr(main_bp, 'data_source'):
         main_bp.data_source = Simulator()
     else:
         main_bp.data_source = SerialReader(config.SERIAL_PORT, config.SERIAL_BAUDRATE)
-    
-    main_bp.data_source.initialize()
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        main_bp.data_source.initialize()
 
 # Remove the cache decorator
 def get_cached_sensor_data():

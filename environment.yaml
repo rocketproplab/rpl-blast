@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - bzip2=1.0.8=h99b78c6_7
+  - bzip2
   - ca-certificates=2025.1.31=hf0a4a13_0
   - libffi=3.4.2=h3422bc3_5
   - liblzma=5.6.3=h39f12f2_1
@@ -36,4 +36,3 @@ dependencies:
       - tenacity==9.0.0
       - werkzeug==2.3.7
       - zipp==3.21.0
-prefix: /Users/andrewyang/miniconda3/envs/RPL
