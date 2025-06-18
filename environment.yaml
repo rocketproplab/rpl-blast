@@ -10,7 +10,6 @@ dependencies:
   - xz               # provides liblzma
   - sqlite           # core database library
   - libffi           # foreign-function interface
-  - ncurses          # terminal control library
   - openssl          # TLS/SSL support
   - pyyaml           # YAML parsing
   - readline         # interactive input
