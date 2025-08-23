@@ -46,7 +46,7 @@ rpl-blast/
 To switch between simulator and serial data:
 1. Open `BLAST_web plotly subplot/app/config.yaml`
 2. Change `data_source: "simulator"` to `data_source: "serial"` for real data
-3. For serial mode, ensure the correct port is set in `serial_port: "/dev/cu.usbmodem1301"`
+3. For serial mode, ensure the correct port is set for `serial_port` following steps above, e.g. `serial_port: "/dev/cu.usbmodem1301"` for Mac, `serial_port: "COM5"` for Windows.
 
 ## Troubleshooting
 
