@@ -1,5 +1,6 @@
 /web-old
 .DS_Store
+__pycache__/
 
 # vibe
 .kiro/
