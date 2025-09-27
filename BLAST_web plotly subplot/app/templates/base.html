@@ -25,5 +25,8 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+    
+    <!-- Browser monitoring script -->
+    <script src="{{ url_for('static', filename='js/browser_monitor.js') }}"></script>
 </body>
 </html> 
