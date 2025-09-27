@@ -1,2 +1,13 @@
 /web-old
 .DS_Store
+
+# vibe
+.kiro/
+CLAUDE.md
+
+# logs
+logs/
+
+# config
+config.py
+config.yaml
