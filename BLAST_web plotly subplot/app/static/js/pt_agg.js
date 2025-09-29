@@ -141,10 +141,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     // Update the plot with new data and ranges
-                    Plotly.update('pt-agg-plot', {
-                        x: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => [...sensorData.x]),
-                        y: sensorData.y
-                    }, {
+                    // Create update data object with proper structure for each trace
+                    const updateData = {
+                        x: sensorData.y.map(() => sensorData.x),  // Reference same x array for all traces
+                        y: sensorData.y.map(yData => yData)  // Reference each y array directly
+                    };
+                    
+                    Plotly.update('pt-agg-plot', updateData, {
                         shapes: newShapes,
                         'xaxis.range': [windowStart, windowEnd]
                     });

@@ -49,7 +49,7 @@ except Exception as e:
 if __name__ == '__main__':
     try:
         app_logger.info("Starting Flask development server")
-        app.run(debug=True)
+        app.run(debug=False, use_reloader=False)
     except KeyboardInterrupt:
         app_logger.info("Application stopped by user")
         perf_monitor.stop_monitoring()

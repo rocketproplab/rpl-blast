@@ -73,10 +73,13 @@ document.addEventListener('DOMContentLoaded', function() {
             //     newShapes.push({ type: 'rect', xref:'x', yref:'y', x0:windowStart, x1:windowEnd, y0:Config.LOAD_CELL_BOUNDARIES.danger[0], y1:Config.LOAD_CELL_BOUNDARIES.danger[1], fillcolor:'rgba(255,0,0,0.2)', line:{width:0}, layer:'below' });
             // }
 
-            Plotly.update(plotDiv, {
-                x: Array(Config.NUM_LOAD_CELLS).fill().map(() => [...lcSensorData.x]),
-                y: lcSensorData.y
-            }, { 
+            // Create update data object with proper structure for each trace
+            const updateData = {
+                x: lcSensorData.y.map(() => lcSensorData.x),  // Reference same x array for all traces
+                y: lcSensorData.y.map(yData => yData)  // Reference each y array directly
+            };
+            
+            Plotly.update(plotDiv, updateData, { 
                 'xaxis.range': [windowStart, windowEnd], 
                 // shapes: newShapes 
             });

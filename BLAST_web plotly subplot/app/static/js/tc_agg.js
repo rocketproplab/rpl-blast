@@ -132,10 +132,13 @@ document.addEventListener('DOMContentLoaded', function() {
             //     });
             // }
 
-            Plotly.update(plotDiv, {
-                x: Array(Config.NUM_THERMOCOUPLES).fill().map(() => [...tcSensorData.x]),
-                y: tcSensorData.y
-            }, {
+            // Create update data object with proper structure for each trace
+            const updateData = {
+                x: tcSensorData.y.map(() => tcSensorData.x),  // Reference same x array for all traces
+                y: tcSensorData.y.map(yData => yData)  // Reference each y array directly
+            };
+            
+            Plotly.update(plotDiv, updateData, {
                 'xaxis.range': [windowStart, windowEnd],
                 // shapes: newShapes
             });

@@ -123,6 +123,8 @@ class PerformanceMonitor:
             value: Metric value
             unit: Optional unit (ms, MB, etc)
         """
+        should_log = False
+        
         with self.metrics_lock:
             if name not in self.metrics:
                 self.metrics[name] = MetricStats(name)
@@ -132,8 +134,12 @@ class PerformanceMonitor:
             # Check if it's time to log
             current_time = time.time()
             if current_time - self.last_log_time >= self.log_interval:
-                self._log_metrics()
+                should_log = True
                 self.last_log_time = current_time
+        
+        # Log metrics outside of lock to prevent blocking
+        if should_log:
+            self._log_metrics()
     
     def start_monitoring(self):
         """Start the monitoring thread"""
@@ -198,28 +204,38 @@ class PerformanceMonitor:
     
     def _log_metrics(self):
         """Log aggregated metrics"""
+        # Copy metrics data while holding lock briefly
+        metrics_copy = {}
+        metrics_to_reset = []
+        
         with self.metrics_lock:
             if not self.metrics:
                 return
             
-            # Create summary
-            summary = {
-                'timestamp': datetime.utcnow().isoformat(),
-                'metrics': {}
-            }
-            
+            # Quick copy of data
             for name, stats in self.metrics.items():
-                summary['metrics'][name] = stats.to_dict()
-            
-            # Log as JSON
+                metrics_copy[name] = stats.to_dict()
+                if not name.startswith(('memory_', 'cpu_', 'thread_')):
+                    metrics_to_reset.append(name)
+        
+        # Do the expensive operations outside the lock
+        summary = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'metrics': metrics_copy
+        }
+        
+        # Log as JSON (this can be slow)
+        try:
             self.logger.info(json.dumps(summary))
-            
-            # Reset non-system metrics
-            metrics_to_reset = [name for name in self.metrics.keys() 
-                              if not name.startswith(('memory_', 'cpu_', 'thread_'))]
-            
-            for name in metrics_to_reset:
-                self.metrics[name] = MetricStats(name)
+        except Exception as e:
+            self.logger.error(f"Failed to log metrics: {e}")
+        
+        # Reset metrics that need resetting
+        if metrics_to_reset:
+            with self.metrics_lock:
+                for name in metrics_to_reset:
+                    if name in self.metrics:  # Check it still exists
+                        self.metrics[name] = MetricStats(name)
     
     def get_statistics(self) -> dict:
         """Get current statistics for all metrics"""

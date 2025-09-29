@@ -40,8 +40,8 @@ if not hasattr(main_bp, 'data_source'):
         main_bp.data_source = SerialReader(config.SERIAL_PORT, config.SERIAL_BAUDRATE)
         if logger:
             logger.info(f"Using serial data source on {config.SERIAL_PORT}")
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        main_bp.data_source.initialize()
+    # Initialize data source (always, not just in debug mode)
+    main_bp.data_source.initialize()
 
 # Remove the cache decorator
 def get_cached_sensor_data():

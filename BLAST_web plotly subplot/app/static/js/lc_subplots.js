@@ -83,10 +83,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 xaxisUpdates[i===0?'xaxis.range':`xaxis${i+1}.range`] = [windowStart, windowEnd];
             }
             
-            Plotly.update(plotDiv, {
-                x: Array(Config.NUM_LOAD_CELLS).fill().map(() => [...lcSensorData.x]),
-                y: lcSensorData.y
-            }, { 
+            // Create update data object with proper structure for each trace
+            const updateData = {
+                x: lcSensorData.y.map(() => lcSensorData.x),  // Reference same x array for all traces
+                y: lcSensorData.y.map(yData => yData)  // Reference each y array directly
+            };
+            
+            Plotly.update(plotDiv, updateData, { 
                 // shapes: newShapes, 
                 ...xaxisUpdates 
             });
