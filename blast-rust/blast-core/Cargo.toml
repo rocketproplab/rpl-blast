@@ -1,0 +1,42 @@
+[package]
+name = "blast-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+# Async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Logging  
+tracing = { workspace = true }
+
+# Serial communication
+serialport = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Time handling
+chrono = { workspace = true }
+
+# Concurrent data structures
+dashmap = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+bytes = { workspace = true }
+
+# Additional dependencies
+csv = "1.3"
+crossbeam-channel = "0.5"
+
+[dev-dependencies]
+criterion = { workspace = true }
+tempfile = "3.8"

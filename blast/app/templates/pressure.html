@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}BLAST | Pressure Transducers{% endblock %}
+{% block header_title %}Pressure Transducers{% endblock %}
+
+{% block head %}
+<script>
+const Config = {
+    PRESSURE_TRANSDUCERS: {{ config.pressure_transducers | tojson }},
+    NUM_PRESSURE_TRANSDUCERS: {{ config.pressure_transducers | length }},
+    PRESSURE_BOUNDARIES: {{ config.pressure_boundaries | tojson }}
+};
+</script>
+<script src="/static/js/pt_config.js"></script>
+<script src="/static/js/pt_line.js"></script>
+<script src="/static/js/pt_agg.js"></script>
+<script src="/static/js/pt_stats.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pt-grid">
+        <div class="pt-line-container">
+            <div id="pt-subplots"></div>
+        </div>
+        <div class="pt-agg-container">
+            <div id="pt-agg-plot"></div>
+        </div>
+        <div class="pt-stat-container">
+            {% for pt in config.pressure_transducers %}
+            <div class="pt-stat-block" id="pt-stat-{{ pt.name | lower | replace(' ', '-') }}">
+                {# The background-color is set dynamically, other styles come from CSS #}
+                <div class="pt-stat-title" style="background-color: {{ pt.color }};">{{ pt.name }}</div>
+                <div class="pt-stat-values">
+                    <p><strong>Latest:</strong> <span class="stat-latest">N/A</span> psi</p>
+                    <p><strong>Avg (10s):</strong> <span class="stat-avg">N/A</span> psi</p>
+                    <p><strong>Rate:</strong> <span class="stat-rate">N/A</span> psi/10s</p>
+                    <p><strong>Max Recorded:</strong> <span class="stat-max">N/A</span> psi</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
