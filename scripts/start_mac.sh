@@ -17,5 +17,4 @@ fi
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 echo "Starting BLAST FastAPI at http://$HOST:$PORT ..."
-exec "$MICROMAMBA" run -p "$ENV_PREFIX" uvicorn backend.app.main:app --host "$HOST" --port "$PORT"
-
+exec "$MICROMAMBA" run -p "$ENV_PREFIX" uvicorn --app-dir "$ROOT" backend.app.main:app --host "$HOST" --port "$PORT"
