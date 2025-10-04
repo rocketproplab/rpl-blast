@@ -1,5 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-exec bash scripts/start_mac.sh
-
+bash scripts/start_mac.sh || true
+echo ""
+read -n 1 -s -r -p "Press any key to close..."
+echo ""

@@ -56,3 +56,4 @@ Write-Host "Installing Python packages into local env..."
 
 Write-Host "Setup complete. To start the app:"
 Write-Host "  PowerShell -ExecutionPolicy Bypass -File scripts\start_win.ps1"
+Read-Host "Press Enter to exit..."
