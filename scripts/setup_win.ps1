@@ -16,17 +16,30 @@ if (!(Test-Path $Micromamba)) {
     $tmp = Join-Path $MambaRoot "micromamba.tar.bz2"
     Invoke-WebRequest -Uri $url -OutFile $tmp
     try {
-        tar -xvjf $tmp -C $MambaRoot "Library/bin/micromamba.exe" 2>$null
+        # Some tar builds emit non-critical messages on stderr that PowerShell treats as errors.
+        $prev = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        tar -xvjf $tmp -C $MambaRoot "Library/bin/micromamba.exe"
         if (Test-Path (Join-Path $MambaRoot "Library/bin/micromamba.exe")) {
+            New-Item -ItemType Directory -Force -Path (Split-Path $Micromamba) | Out-Null
             Move-Item -Force (Join-Path $MambaRoot "Library/bin/micromamba.exe") $Micromamba
         } else {
-            tar -xvjf $tmp -C $MambaRoot "bin/micromamba.exe" 2>$null
+            tar -xvjf $tmp -C $MambaRoot "bin/micromamba.exe"
             if (Test-Path (Join-Path $MambaRoot "bin/micromamba.exe")) {
+                New-Item -ItemType Directory -Force -Path (Split-Path $Micromamba) | Out-Null
                 Move-Item -Force (Join-Path $MambaRoot "bin/micromamba.exe") $Micromamba
             } else {
-                throw "Failed to extract micromamba.exe"
+                # Last resort: search for the binary anywhere under the extraction dir
+                $found = Get-ChildItem -Path $MambaRoot -Recurse -Filter micromamba.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($found) {
+                    New-Item -ItemType Directory -Force -Path (Split-Path $Micromamba) | Out-Null
+                    Move-Item -Force $found.FullName $Micromamba
+                } else {
+                    throw "Failed to extract micromamba.exe"
+                }
             }
         }
+        $ErrorActionPreference = $prev
     } finally {
         if (Test-Path $tmp) { Remove-Item $tmp -Force }
     }
@@ -43,4 +56,3 @@ Write-Host "Installing Python packages into local env..."
 
 Write-Host "Setup complete. To start the app:"
 Write-Host "  PowerShell -ExecutionPolicy Bypass -File scripts\start_win.ps1"
-
