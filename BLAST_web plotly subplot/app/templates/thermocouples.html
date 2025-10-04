@@ -26,6 +26,7 @@ const Config = {
 <script src="{{ url_for('static', filename='js/lc_stats.js') }}"></script>
 {# Master data fetcher #}
 <script src="{{ url_for('static', filename='js/get_data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calibration.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -84,5 +85,15 @@ const Config = {
             </div>
         </div>
     </div>
+    <div id="calibration-tc-lc"></div>
 </div>
-{% endblock %} 
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.Calibration && typeof window.Calibration.initTCLC === 'function') {
+        window.Calibration.initTCLC();
+    }
+});
+</script>
+{% endblock %}

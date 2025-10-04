@@ -596,4 +596,70 @@ button[onclick*="'right'"] {
     opacity: 0.9;
     color: #FFFFFF;
     font-family: 'Roboto', Arial, sans-serif;
-} 
+}
+
+/* Calibration block styles (match overall app aesthetics) */
+.calibration-block {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.calibration-header { /* title + actions on one line */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.calibration-title {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin: 0;
+    color: #333;
+}
+
+.calibration-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.calibration-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.calibration-row {
+    display: grid;
+    grid-template-columns: auto 2fr 1fr 1fr 1fr; /* swatch | name | input | update | zero */
+    gap: 8px;
+    align-items: center;
+}
+
+.calibration-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+}
+
+.calibration-row .sensor-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calibration-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.calibration-update, .calibration-zero {
+    width: 100%;
+}

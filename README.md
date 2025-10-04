@@ -1,12 +1,60 @@
 # rpl-blast
 
+## One-click Setup (No Python required)
+Two simple scripts install an isolated Python locally and start the app.
+
+- macOS
+  - Setup: `bash scripts/setup_mac.sh`
+  - Start: `bash scripts/start_mac.sh` → open http://127.0.0.1:8000
+  - Or double‑click in Finder: `scripts/Setup Mac.command` then `scripts/Start App.command`
+  - If double‑click is blocked: run `bash scripts/fix_permissions_mac.sh`, then try again. You may also need to right‑click → Open once to approve.
+
+- Windows (PowerShell)
+  - Setup: `PowerShell -ExecutionPolicy Bypass -File scripts\\setup_win.ps1`
+  - Start: `PowerShell -ExecutionPolicy Bypass -File scripts\\start_win.ps1` → open http://127.0.0.1:8000
+  - Or double‑click: `scripts\\setup_win.bat` then `scripts\\start_win.bat`
+
+Details
+- Uses micromamba to download a local Python and create a project‑scoped env at `.venv` (no global changes).
+- Installs Python packages from `requirements.txt`.
+- Customize host/port via env vars `HOST` and `PORT` when running the start scripts.
+
+Uninstall (remove local Python + packages only)
+- macOS: `bash scripts/uninstall_mac.sh` (or double‑click `scripts/Uninstall Mac.command`)
+- Windows: `PowerShell -ExecutionPolicy Bypass -File scripts\\uninstall_win.ps1` (or double‑click `scripts\\uninstall_win.bat`)
+
 ## Setup Conda Environment
 ```bash
 conda env create -f environment.yaml
 conda activate RPL
 ```
 
-## Run Application
+## Run Application (FastAPI)
+For all steps below, run using the Anaconda Prompt if on Windows.
+### FastAPI dev server
+```bash
+# from repo root
+conda activate RPL
+uvicorn backend.app.main:app --reload
+```
+Open http://127.0.0.1:8000 in your browser.
+
+The UI reuses the legacy templates and static assets under `BLAST_web plotly subplot/app/`. The `/data` endpoint returns adjusted sensor values, and also exposes `raw`, `adjusted`, and `offsets` for calibration-aware clients.
+
+### Calibration
+- UI controls are available under the plots on the Pressure and Thermocouples pages.
+- API:
+  - `GET /api/offsets`
+  - `PUT /api/offsets` with a JSON object `{ sensor_id: offset }`
+  - `POST /api/zero/{sensor_id}`
+  - `POST /api/zero_all`
+  - `POST /api/reset_offsets`
+
+Notes:
+- Set `data_source: "simulator"` in `BLAST_web plotly subplot/app/config.yaml` for local development (serial fails fast until implemented).
+- Logs stream to `BLAST_web plotly subplot/logs/data.jsonl`.
+
+## Run Application (Legacy Flask)
 For all steps below, run using the Anaconda Prompt if on windows.
 ### Check COM port on Windows:
 ```bash

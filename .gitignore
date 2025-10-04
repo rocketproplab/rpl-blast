@@ -1,6 +1,10 @@
 /web-old
 .DS_Store
 __pycache__/
+.pytest_cache/
+htmlcov/
+.mamba/
+.venv/
 
 # vibe
 .kiro/
@@ -8,6 +12,9 @@ CLAUDE.md
 
 # logs
 logs/
+
+# backend runtime state
+backend/app/state/*.yaml
 
 # config
 config.py

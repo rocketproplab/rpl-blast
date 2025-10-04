@@ -18,6 +18,9 @@ dependencies:
   - tzdata           # timezone data
   - wheel            # binary package format
   - pip:
+      - fastapi==0.115.2
+      - uvicorn[standard]==0.30.6
+      - pydantic==2.9.2
       - blinker==1.9.0
       - click==8.1.8
       - flask==2.3.3
