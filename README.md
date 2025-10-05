@@ -1,27 +1,23 @@
 # rpl-blast
 
 ## One-click Setup (No Python required)
-Two simple scripts install an isolated Python locally and start the app.
+Use the scripts in `scripts/` for the simplest experience.
 
 - macOS
-  - Setup: `bash scripts/setup_mac.sh`
-  - Start: `bash scripts/start_mac.sh` → open http://127.0.0.1:8000
-  - Or double‑click in Finder: `scripts/Setup Mac.command` then `scripts/Start App.command`
-  - If double‑click is blocked: run `bash scripts/fix_permissions_mac.sh`, then try again. You may also need to right‑click → Open once to approve.
+  - Double‑click: `scripts/Setup Mac.command` then `scripts/Start App.command`
+  - If blocked by macOS: run `bash scripts/fix_permissions_mac.sh`, then try again.
 
 - Windows (PowerShell)
-  - Setup: `PowerShell -ExecutionPolicy Bypass -File scripts\\setup_win.ps1`
-  - Start: `PowerShell -ExecutionPolicy Bypass -File scripts\\start_win.ps1` → open http://127.0.0.1:8000
-  - Or double‑click: `scripts\\setup_win.bat` then `scripts\\start_win.bat`
+  - Double‑click: `scripts\setup_win.bat` then `scripts\start_win.bat`
 
 Details
 - Uses micromamba to download a local Python and create a project‑scoped env at `.venv` (no global changes).
 - Installs Python packages from `requirements.txt`.
 - Customize host/port via env vars `HOST` and `PORT` when running the start scripts.
 
-Uninstall (remove local Python + packages only)
-- macOS: `bash scripts/uninstall_mac.sh` (or double‑click `scripts/Uninstall Mac.command`)
-- Windows: `PowerShell -ExecutionPolicy Bypass -File scripts\\uninstall_win.ps1` (or double‑click `scripts\\uninstall_win.bat`)
+ Uninstall (remove local Python + packages only)
+- macOS: double‑click `scripts/Uninstall Mac.command`
+- Windows: double‑click `scripts\uninstall_win.bat`
 
 ## Setup Conda Environment
 ```bash
