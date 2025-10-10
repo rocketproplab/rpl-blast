@@ -15,10 +15,10 @@ import logging
 from .logging import LoggerManager, EventLogger, SerialLogger, PerformanceMonitor, ErrorRecovery, FreezeDetector
 
 from .config.paths import (
-    FRONTEND_CONFIG_YAML,
     FRONTEND_STATIC,
     FRONTEND_TEMPLATES,
     assert_legacy_layout,
+    get_config_path,
 )
 from .config.loader import load_settings
 from .routers import data as data_router
@@ -67,7 +67,8 @@ def _get_logs_path() -> Path:
 def create_app() -> FastAPI:
     assert_legacy_layout()
 
-    settings = load_settings(FRONTEND_CONFIG_YAML)
+    config_path = get_config_path()
+    settings = load_settings(config_path)
 
     app = FastAPI()
 

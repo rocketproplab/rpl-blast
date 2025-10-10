@@ -1,0 +1,42 @@
+# BLAST Web and Data Configuration - CI Sample
+# This is a minimal configuration file for CI testing
+
+# Data Source
+data_source: "simulator"  # Force simulator mode for CI
+
+# Serial Configuration (not used in simulator mode)
+serial_port: "/dev/ttyUSB0"
+serial_baudrate: 115200
+
+# subpage 1
+subpage1:
+  title: "Pressure Transducers"
+  description: "Pressure measurements from pressure transducers"
+  pressure_transducers:
+    - name: "Test PT 1"
+      id: "pt1"
+      color: "#0072B2"  # Blue
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
+
+# subpage 2
+subpage2:
+  title: "Thermocouples & Load Cells"
+  description: "Temperature measurements from thermocouples and load cells"
+  thermocouples:
+    - name: "Test TC 1"
+      id: "tc1"
+      color: "#CC79A7"  # Pink
+      min_value: 0
+      max_value: 1000
+      warning_value: 500
+      danger_value: 800
+  load_cells: []
+
+# subpage 3
+subpage3:
+  title: "Flow Control Valves"
+  description: "Flow control measurements from flow control valves"
+  flow_control_valves: []
