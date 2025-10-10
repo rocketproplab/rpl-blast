@@ -15,20 +15,24 @@ class LoggerManager:
     """Central coordinator for BLAST logging system"""
     
     def __init__(self, log_dir: Path, config_path: Optional[Path] = None):
-        self.log_dir = Path(log_dir)
+        self.base_log_dir = Path(log_dir)
+        self.base_log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create run-specific directory with timestamp
+        self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.log_dir = self.base_log_dir / self.run_timestamp
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
-        # Create timestamped log files to avoid overwriting
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.data_log = self.log_dir / f"data_{timestamp}.jsonl"
-        self.events_log = self.log_dir / f"events_{timestamp}.jsonl"
-        self.serial_log = self.log_dir / f"serial_{timestamp}.jsonl"
-        self.performance_log = self.log_dir / f"performance_{timestamp}.jsonl"
-        self.errors_log = self.log_dir / f"errors_{timestamp}.jsonl"
-        self.system_log = self.log_dir / f"system_{timestamp}.log"
+        # Create log files in the run directory (no timestamps needed in filenames)
+        self.data_log = self.log_dir / "data.jsonl"
+        self.events_log = self.log_dir / "events.jsonl"
+        self.serial_log = self.log_dir / "serial.jsonl"
+        self.performance_log = self.log_dir / "performance.jsonl"
+        self.errors_log = self.log_dir / "errors.jsonl"
+        self.system_log = self.log_dir / "system.log"
         
-        # Create "latest" symlinks for easy access
-        self._create_latest_symlinks()
+        # Create "latest" symlink to current run directory
+        self._create_latest_symlink()
         
         # Setup Python logging
         self._setup_logging(config_path)
@@ -46,29 +50,19 @@ class LoggerManager:
         self.logger = logging.getLogger('blast.manager')
         self.logger.info("BLAST Logger Manager initialized")
     
-    def _create_latest_symlinks(self):
-        """Create 'latest' symlinks for easy access to current log files"""
+    def _create_latest_symlink(self):
+        """Create 'latest' symlink to current run directory"""
         try:
-            symlinks = {
-                'data_latest.jsonl': self.data_log,
-                'events_latest.jsonl': self.events_log,
-                'serial_latest.jsonl': self.serial_log,
-                'performance_latest.jsonl': self.performance_log,
-                'errors_latest.jsonl': self.errors_log,
-                'system_latest.log': self.system_log
-            }
-            
-            for symlink_name, target in symlinks.items():
-                symlink_path = self.log_dir / symlink_name
-                # Remove existing symlink if it exists
-                if symlink_path.exists() or symlink_path.is_symlink():
-                    symlink_path.unlink()
-                # Create new symlink
-                symlink_path.symlink_to(target.name)
+            latest_symlink = self.base_log_dir / 'latest'
+            # Remove existing symlink if it exists
+            if latest_symlink.exists() or latest_symlink.is_symlink():
+                latest_symlink.unlink()
+            # Create symlink to current run directory
+            latest_symlink.symlink_to(self.run_timestamp)
                 
         except Exception as e:
             # Symlinks might not work on all systems, so just log the error
-            logging.getLogger('blast.manager').warning(f"Could not create symlinks: {e}")
+            logging.getLogger('blast.manager').warning(f"Could not create latest symlink: {e}")
     
     def _setup_logging(self, config_path: Optional[Path]):
         """Setup Python logging configuration"""
@@ -179,6 +173,11 @@ class LoggerManager:
             **self.stats,
             'uptime_seconds': uptime,
             'uptime_formatted': f"{uptime/3600:.1f}h",
+            'run_info': {
+                'run_timestamp': self.run_timestamp,
+                'run_directory': str(self.log_dir),
+                'base_log_directory': str(self.base_log_dir)
+            },
             'log_files': {
                 'data': str(self.data_log),
                 'events': str(self.events_log),
@@ -189,20 +188,40 @@ class LoggerManager:
             }
         }
     
-    def cleanup_old_logs(self, days: int = 7):
-        """Clean up log files older than specified days"""
+    def cleanup_old_runs(self, days: int = 7):
+        """Clean up old run directories older than specified days"""
         cutoff = time.time() - (days * 24 * 3600)
         cleaned = 0
         
-        for log_file in self.log_dir.glob("*.jsonl"):
-            if log_file.stat().st_mtime < cutoff:
+        for run_dir in self.base_log_dir.glob("20*"):  # Directories starting with year
+            if run_dir.is_dir() and run_dir.stat().st_mtime < cutoff:
                 try:
                     # Archive instead of delete
-                    archive_name = f"{log_file.stem}_{int(log_file.stat().st_mtime)}.archived"
-                    log_file.rename(self.log_dir / archive_name)
+                    archive_name = f"{run_dir.name}.archived"
+                    archive_path = self.base_log_dir / archive_name
+                    run_dir.rename(archive_path)
                     cleaned += 1
                 except Exception as e:
-                    self.logger.error(f"Failed to archive {log_file}: {e}")
+                    self.logger.error(f"Failed to archive run directory {run_dir}: {e}")
         
-        self.log_event('system', f'Log cleanup completed, archived {cleaned} files')
+        self.log_event('system', f'Log cleanup completed, archived {cleaned} run directories')
         return cleaned
+    
+    def create_run_summary(self):
+        """Create a summary file for this run"""
+        try:
+            summary = {
+                'run_timestamp': self.run_timestamp,
+                'start_time': self.stats['start_time'],
+                'end_time': time.time(),
+                'duration_seconds': time.time() - self.stats['start_time'],
+                'statistics': dict(self.stats),
+                'log_files_created': list(self.log_files.keys()) if hasattr(self, 'log_files') else []
+            }
+            
+            summary_file = self.log_dir / 'run_summary.json'
+            with open(summary_file, 'w') as f:
+                json.dump(summary, f, indent=2)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create run summary: {e}")

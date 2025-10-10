@@ -133,16 +133,23 @@ def create_app() -> FastAPI:
             app.state.health_error = f"calibration: {e}"
             print(f"FATAL: failed to load calibration offsets: {e}", file=sys.stderr)
             raise SystemExit(1)
-        # Choose data source (simulate serial existence but default to simulator)
-        if settings.DATA_SOURCE == "serial":
+        # Choose data source (check for CI override first)
+        import os as _os
+        force_simulator = _os.environ.get('FORCE_SIMULATOR_MODE', '').lower() in ('1', 'true', 'yes')
+        
+        if force_simulator or settings.DATA_SOURCE == "simulator":
+            source = SimulatorSource(settings)
+            data_source_name = 'simulator'
+            reason = 'CI environment override' if force_simulator else 'startup configuration'
+        else:
             # Pass logging components to data source
             settings._serial_logger = app.state.serial_logger
             settings._freeze_detector = app.state.freeze_detector
             source = SerialSource(settings)
-            app.state.event_logger.log_data_source_change('unknown', 'serial', 'startup configuration')
-        else:
-            source = SimulatorSource(settings)
-            app.state.event_logger.log_data_source_change('unknown', 'simulator', 'startup configuration')
+            data_source_name = 'serial'
+            reason = 'startup configuration'
+            
+        app.state.event_logger.log_data_source_change('unknown', data_source_name, reason)
 
         try:
             source.initialize()
@@ -263,6 +270,9 @@ def create_app() -> FastAPI:
         # Stop monitoring systems
         app.state.performance_monitor.stop_monitoring()
         app.state.freeze_detector.stop_monitoring()
+        
+        # Create run summary
+        app.state.logger_manager.create_run_summary()
         
         task = app.state.reader_task
         if task:

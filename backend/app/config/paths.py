@@ -7,21 +7,10 @@ import sys
 # Resolve repository root from this file location
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-LEGACY_APP_DIR = REPO_ROOT / "BLAST_web plotly subplot" / "app"
-
-# Prefer new frontend/app for templates and config when present
+# Use the current frontend structure
 FRONTEND_TEMPLATES = REPO_ROOT / "frontend" / "app" / "templates"
-if not FRONTEND_TEMPLATES.exists():
-    FRONTEND_TEMPLATES = LEGACY_APP_DIR / "templates"
-
 FRONTEND_CONFIG_YAML = REPO_ROOT / "frontend" / "app" / "config.yaml"
-if not FRONTEND_CONFIG_YAML.exists():
-    FRONTEND_CONFIG_YAML = LEGACY_APP_DIR / "config.yaml"
-
-# Static: use new path only when migration sentinel exists; else serve legacy static
 FRONTEND_STATIC = REPO_ROOT / "frontend" / "app" / "static"
-if (not FRONTEND_STATIC.exists()) or (not (FRONTEND_STATIC / ".migrated").exists()):
-    FRONTEND_STATIC = LEGACY_APP_DIR / "static"
 
 
 def assert_legacy_layout() -> None:
