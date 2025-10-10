@@ -5,11 +5,14 @@ import sys
 from typing import Optional
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import json
 import logging
+
+# Import comprehensive logging system
+from .logging import LoggerManager, EventLogger, SerialLogger, PerformanceMonitor, ErrorRecovery, FreezeDetector
 
 from .config.paths import (
     FRONTEND_CONFIG_YAML,
@@ -24,6 +27,7 @@ from .routers import calibration as calibration_router
 from .services.data_source import SimulatorSource, SerialSource
 from .services.calibration import CalibrationService, CalibrationStore
 from .services.reading_cache import LatestReadingCache
+from .version import get_version
 
 
 def _apply_offsets(raw: dict, offsets: dict, settings) -> dict:
@@ -67,6 +71,17 @@ def create_app() -> FastAPI:
 
     app = FastAPI()
 
+    # Initialize comprehensive logging system
+    logs_dir = FRONTEND_TEMPLATES.parent.parent / 'logs'
+    config_path = FRONTEND_TEMPLATES.parent / 'logging_config.yaml'
+    
+    app.state.logger_manager = LoggerManager(logs_dir, config_path)
+    app.state.event_logger = EventLogger(app.state.logger_manager)
+    app.state.serial_logger = SerialLogger(app.state.logger_manager)
+    app.state.performance_monitor = PerformanceMonitor(app.state.logger_manager)
+    app.state.error_recovery = ErrorRecovery(app.state.logger_manager)
+    app.state.freeze_detector = FreezeDetector(app.state.logger_manager)
+
     # Shared state
     app.state.settings = settings
     app.state.cache = LatestReadingCache()
@@ -76,6 +91,17 @@ def create_app() -> FastAPI:
     app.state.health_error: Optional[str] = None
     app.state.data_log_path: Path = _get_logs_path()
     app.state.data_log_errors: int = 0
+    # Health thresholds (customizable via env)
+    import os as _os
+    try:
+        app.state.health_max_lag_ms = float(_os.environ.get("HEALTH_MAX_LAG_MS", "2000"))
+    except Exception:
+        app.state.health_max_lag_ms = 2000.0
+    try:
+        app.state.health_max_log_errors = int(_os.environ.get("HEALTH_MAX_LOG_ERRORS", "100"))
+    except Exception:
+        app.state.health_max_log_errors = 100
+    app.state.app_version = get_version()
 
     # Mount static files under the same name Flask templates expect
     app.mount(
@@ -109,10 +135,14 @@ def create_app() -> FastAPI:
             raise SystemExit(1)
         # Choose data source (simulate serial existence but default to simulator)
         if settings.DATA_SOURCE == "serial":
-            # Fail hard for serial until implemented; require config to be "simulator" for dev
+            # Pass logging components to data source
+            settings._serial_logger = app.state.serial_logger
+            settings._freeze_detector = app.state.freeze_detector
             source = SerialSource(settings)
+            app.state.event_logger.log_data_source_change('unknown', 'serial', 'startup configuration')
         else:
             source = SimulatorSource(settings)
+            app.state.event_logger.log_data_source_change('unknown', 'simulator', 'startup configuration')
 
         try:
             source.initialize()
@@ -136,6 +166,11 @@ def create_app() -> FastAPI:
                 "timestamp": ts,
                 "value": value_adjusted,
             })
+            
+            # Log data using comprehensive logging system
+            app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
+            
+            # Legacy logging fallback
             try:
                 with app.state.data_log_path.open("a") as f:
                     f.write(json.dumps({
@@ -144,8 +179,9 @@ def create_app() -> FastAPI:
                         "adjusted": adjusted,
                         "offsets": offsets,
                     }) + "\n")
-            except Exception:
+            except Exception as e:
                 app.state.data_log_errors += 1
+                app.state.logger_manager.log_error('file_write_error', f'Failed to write legacy log: {e}')
         except SystemExit:
             raise
         except Exception as e:
@@ -157,6 +193,12 @@ def create_app() -> FastAPI:
         async def reader_loop():
             try:
                 while True:
+                    # Heartbeat for freeze detection
+                    app.state.freeze_detector.heartbeat('data_acquisition')
+                    
+                    # Measure performance
+                    timer_id = app.state.performance_monitor.start_timer('data_read')
+                    
                     value, ts = source.read_once()
                     raw = {
                         k: v for k, v in value.items() if k in ("pt", "tc", "lc", "fcv_actual", "fcv_expected")
@@ -173,6 +215,11 @@ def create_app() -> FastAPI:
                         "timestamp": ts,
                         "value": value_adjusted,
                     })
+                    
+                    # Log data using comprehensive logging system
+                    app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
+                    
+                    # Legacy logging fallback
                     try:
                         with app.state.data_log_path.open("a") as f:
                             f.write(json.dumps({
@@ -181,23 +228,42 @@ def create_app() -> FastAPI:
                                 "adjusted": adjusted,
                                 "offsets": offsets,
                             }) + "\n")
-                    except Exception:
+                    except Exception as e:
                         app.state.data_log_errors += 1
+                        app.state.logger_manager.log_error('file_write_error', f'Failed to write legacy log: {e}')
+                    
+                    # End performance measurement
+                    app.state.performance_monitor.end_timer(timer_id)
+                    
+                    # Check data lag
+                    import time as _t
+                    lag_ms = (_t.time() - ts) * 1000 if ts else 0
+                    app.state.performance_monitor.log_data_lag(lag_ms)
+                    
                     # Pace the loop to avoid blocking the event loop
                     interval = getattr(source, "update_interval_s", 0.1)
                     await asyncio.sleep(interval)
             except asyncio.CancelledError:
+                app.state.event_logger.log_system_state('data_reader_cancelled', True)
                 # graceful shutdown
                 source.shutdown()
             except Exception as e:
                 app.state.healthy = False
                 app.state.health_error = f"reader: {e}"
+                app.state.logger_manager.log_error('data_reader_error', f'Data reader loop failed: {e}', e)
+                app.state.event_logger.log_system_state('data_reader_error', False, {'error': str(e)})
                 print(f"ERROR: reader loop stopped: {e}", file=sys.stderr)
 
         app.state.reader_task = asyncio.create_task(reader_loop())
 
     @app.on_event("shutdown")
     async def _shutdown():
+        app.state.event_logger.log_shutdown()
+        
+        # Stop monitoring systems
+        app.state.performance_monitor.stop_monitoring()
+        app.state.freeze_detector.stop_monitoring()
+        
         task = app.state.reader_task
         if task:
             task.cancel()
@@ -218,8 +284,8 @@ def create_app() -> FastAPI:
         if isinstance(last_ts, (int, float)):
             lag_ms = max(0, (now - float(last_ts)) * 1000.0)
         # Derive health: base health AND lag under threshold
-        lag_ok = (lag_ms is None) or (lag_ms < 2000)
-        data_log_ok = getattr(app.state, 'data_log_errors', 0) < 100
+        lag_ok = (lag_ms is None) or (lag_ms < app.state.health_max_lag_ms)
+        data_log_ok = getattr(app.state, 'data_log_errors', 0) < app.state.health_max_log_errors
         healthy = app.state.healthy and lag_ok and data_log_ok
         return {
             "status": "ok" if healthy else "error",
@@ -230,7 +296,33 @@ def create_app() -> FastAPI:
             "offsets_count": len(offsets),
             "lag_ms": lag_ms,
             "last_ts": last_ts,
+            "version": app.state.app_version,
         }
+
+    @app.get("/api/logging/status")
+    async def logging_status():
+        """Get comprehensive logging system status"""
+        # Heartbeat for API monitoring
+        app.state.freeze_detector.heartbeat('api_requests')
+        
+        timer_id = app.state.performance_monitor.start_timer('api_logging_status')
+        
+        try:
+            return {
+                "logger_manager": app.state.logger_manager.get_stats(),
+                "event_logger": app.state.event_logger.get_event_summary(),
+                "serial_logger": app.state.serial_logger.get_stats(),
+                "performance_monitor": app.state.performance_monitor.get_stats(),
+                "error_recovery": app.state.error_recovery.get_recovery_stats(),
+                "freeze_detector": app.state.freeze_detector.get_stats(),
+                "health_checks": {
+                    "performance": app.state.performance_monitor.health_check(),
+                    "error_recovery": app.state.error_recovery.health_check(),
+                    "freeze_detector": app.state.freeze_detector.health_check()
+                }
+            }
+        finally:
+            app.state.performance_monitor.end_timer(timer_id)
 
     return app
 

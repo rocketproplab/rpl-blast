@@ -35,7 +35,7 @@ uvicorn backend.app.main:app --reload
 ```
 Open http://127.0.0.1:8000 in your browser.
 
-The UI reuses the legacy templates and static assets under `BLAST_web plotly subplot/app/`. The `/data` endpoint returns adjusted sensor values, and also exposes `raw`, `adjusted`, and `offsets` for calibration-aware clients.
+The FastAPI app serves templates from `frontend/app/templates` and static assets from `frontend/app/static`. The `/data` endpoint returns adjusted sensor values, and also exposes `raw`, `adjusted`, and `offsets` for calibration-aware clients.
 
 ### Calibration
 - UI controls are available under the plots on the Pressure and Thermocouples pages.
@@ -47,11 +47,12 @@ The UI reuses the legacy templates and static assets under `BLAST_web plotly sub
   - `POST /api/reset_offsets`
 
 Notes:
-- Set `data_source: "simulator"` in `BLAST_web plotly subplot/app/config.yaml` for local development (serial fails fast until implemented).
-- Logs stream to `BLAST_web plotly subplot/logs/data.jsonl`.
+- Set `data_source: "simulator"` in `frontend/app/config.yaml` for local development (serial fails fast until implemented).
+- Logs stream to `frontend/logs/data.jsonl`.
 
-## Run Application (Legacy Flask)
-For all steps below, run using the Anaconda Prompt if on windows.
+## Legacy Flask (Deprecated)
+The legacy Flask runner is deprecated in favor of the FastAPI app. Templates and static assets are reused, but Flask blueprints and legacy modules are no longer maintained in this branch.
+If needed, use the `legacy` branch (or the pre‑migration tag) to run the old Flask app. For reference only:
 ### Check COM port on Windows:
 ```bash
 # Check you are in root directory of this repository
@@ -65,7 +66,7 @@ The expected output will be similar to:
 2025-06-18 14:08:26,570 [INFO] COM5 — Arduino Mega 2560 (COM5)
 ```
 Take note of the name of the port before the dash, e.g. COM5.
-In `Blast_web plotly subplot/app/config.yaml`, replace the value of `serial_port` with the string of the name of the port, (e.g. `serial_port: "COM5"`)
+In `frontend/app/config.yaml`, replace the value of `serial_port` with the string of the name of the port, (e.g. `serial_port: "COM5"`)
 ### Running the GUI
 ```bash
 # Check you are in the correct directory
@@ -73,22 +74,23 @@ cd "BLAST_web plotly subplot"
 conda activate RPL
 python run.py
 ```
-Then open http://127.0.0.1:5000 in your web browser.
+Then open http://127.0.0.1:5000 in your web browser (legacy only).
 
-## Project Structure
+## Project Structure (current)
 ```
 rpl-blast/
-├── BLAST_web plotly subplot/
-│   ├── app/            # Application code
-│   ├── logs/           # Log files
-│   └── run.py          # Application entry point
-├── environment.yaml    # Conda environment file
-└── README.md          # This file
+├── backend/app/            # FastAPI backend
+├── frontend/app/           # Templates, static, config.yaml
+├── frontend/logs/          # Runtime logs (data.jsonl, offsets)
+├── scripts/                # One‑click setup/start/uninstall
+├── tools/                  # Utilities (e.g., migrate_static.py)
+├── environment.yaml        # Conda environment (optional)
+└── README.md
 ```
 
 ## Switching Data Sources
 To switch between simulator and serial data:
-1. Open `BLAST_web plotly subplot/app/config.yaml`
+1. Open `frontend/app/config.yaml`
 2. Change `data_source: "simulator"` to `data_source: "serial"` for real data
 3. For serial mode, ensure the correct port is set for `serial_port` following steps above, e.g. `serial_port: "/dev/cu.usbmodem1301"` for Mac, `serial_port: "COM5"` for Windows.
 

@@ -7,13 +7,21 @@ import sys
 # Resolve repository root from this file location
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-# Legacy frontend app directory (keep as-is; includes spaces)
-LEGACY_APP_DIRNAME = "BLAST_web plotly subplot"
-LEGACY_APP_DIR = REPO_ROOT / LEGACY_APP_DIRNAME / "app"
+LEGACY_APP_DIR = REPO_ROOT / "BLAST_web plotly subplot" / "app"
 
-FRONTEND_TEMPLATES = LEGACY_APP_DIR / "templates"
-FRONTEND_STATIC = LEGACY_APP_DIR / "static"
-FRONTEND_CONFIG_YAML = LEGACY_APP_DIR / "config.yaml"
+# Prefer new frontend/app for templates and config when present
+FRONTEND_TEMPLATES = REPO_ROOT / "frontend" / "app" / "templates"
+if not FRONTEND_TEMPLATES.exists():
+    FRONTEND_TEMPLATES = LEGACY_APP_DIR / "templates"
+
+FRONTEND_CONFIG_YAML = REPO_ROOT / "frontend" / "app" / "config.yaml"
+if not FRONTEND_CONFIG_YAML.exists():
+    FRONTEND_CONFIG_YAML = LEGACY_APP_DIR / "config.yaml"
+
+# Static: use new path only when migration sentinel exists; else serve legacy static
+FRONTEND_STATIC = REPO_ROOT / "frontend" / "app" / "static"
+if (not FRONTEND_STATIC.exists()) or (not (FRONTEND_STATIC / ".migrated").exists()):
+    FRONTEND_STATIC = LEGACY_APP_DIR / "static"
 
 
 def assert_legacy_layout() -> None:
@@ -26,7 +34,6 @@ def assert_legacy_layout() -> None:
     if not FRONTEND_CONFIG_YAML.exists():
         missing.append(str(FRONTEND_CONFIG_YAML))
     if missing:
-        msg = "FATAL: missing required legacy paths: " + ", ".join(missing)
+        msg = "FATAL: missing required frontend paths: " + ", ".join(missing)
         print(msg, file=sys.stderr)
         raise SystemExit(1)
-

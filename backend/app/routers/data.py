@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+import time
 
 from ..schemas.data import DataEnvelope
 
@@ -33,3 +34,25 @@ def get_data(request: Request, type: str = "all"):
         offsets=snap.get("offsets"),
     )
     return JSONResponse(env.model_dump())
+
+
+@router.post("/api/browser_heartbeat")
+async def browser_heartbeat(request: Request):
+    """Receive browser heartbeat to monitor user activity"""
+    try:
+        data = await request.json()
+        # Log or store heartbeat data if needed for monitoring
+        return JSONResponse({"status": "ok", "timestamp": time.time()})
+    except Exception:
+        return JSONResponse({"status": "ok", "timestamp": time.time()})
+
+
+@router.post("/api/browser_status") 
+async def browser_status(request: Request):
+    """Receive browser status updates"""
+    try:
+        data = await request.json()
+        # Log or store status data if needed for monitoring
+        return JSONResponse({"status": "ok", "timestamp": time.time()})
+    except Exception:
+        return JSONResponse({"status": "ok", "timestamp": time.time()})
