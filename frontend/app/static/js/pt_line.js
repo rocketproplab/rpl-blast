@@ -53,6 +53,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Compute dynamic row gap based on number of subplots (tighter when many)
+    const ROWGAP = (function(n){
+        // Slightly larger gaps to improve readability on small subplots
+        if (n >= 6) return 0.06;
+        if (n >= 4) return 0.08;
+        return 0.12;
+    })(Config.NUM_PRESSURE_TRANSDUCERS);
+
     // Create subplot layout with shapes for zones
     const layout = {
         ...PT_PLOT_CONFIG.layout,
@@ -60,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rows: Config.NUM_PRESSURE_TRANSDUCERS,
             columns: 1,
             pattern: 'independent',
-            rowgap: 0.15
+            rowgap: ROWGAP
         },
         shapes: [], // Will be populated with zone rectangles
         showlegend: false,
@@ -95,9 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showline: true, // Show y-axis line
             linecolor: Config.PRESSURE_TRANSDUCERS[i].color, // Color y-axis line
             linewidth: 2,      // Set y-axis line width
-            range: [Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value], // Set Y-axis range
-            tickvals: generateTickVals(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value),
-            ticktext: generateTickVals(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value).map(String)
+            range: [Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value], // Initial Y-axis range
+            tickvals: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15),
+            ticktext: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15).map(String)
         };
     }
 
@@ -161,6 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const xaxisUpdates = {};
             const yaxisUpdates = {};
+            const yTicksUpdates = {};
             const dynUpperByIndex = {};
             for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
                 const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
@@ -179,6 +188,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const yKey = i === 0 ? 'yaxis.range' : `yaxis${i + 1}.range`;
                 yaxisUpdates[yKey] = [minY, dynUpper];
                 dynUpperByIndex[i] = dynUpper;
+
+                // Dynamic y ticks
+                const ticks = generateNiceTicks(minY, dynUpper, 15);
+                const yTickValsKey = i === 0 ? 'yaxis.tickvals' : `yaxis${i + 1}.tickvals`;
+                const yTickTextKey = i === 0 ? 'yaxis.ticktext' : `yaxis${i + 1}.ticktext`;
+                yTicksUpdates[yTickValsKey] = ticks;
+                yTicksUpdates[yTickTextKey] = ticks.map(String);
             }
 
             const updateData = {
@@ -220,21 +236,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }, {
                 shapes: newShapes,
                 ...xaxisUpdates,
-                ...yaxisUpdates
+                ...yaxisUpdates,
+                ...yTicksUpdates
             });
         }
     };
 });
 
-function generateTickVals(axisMin, axisMax) {
-    const ticks = [axisMin, axisMax];
-    let current = Math.ceil(axisMin / 100) * 100;
-    while (current < axisMax) {
-        if (current > axisMin) {
-            ticks.push(current);
-        }
-        current += 100;
+function generateNiceTicks(minV, maxV, maxTicks) {
+    // Generate <= maxTicks "nice" tick positions from minV to maxV
+    if (!isFinite(minV) || !isFinite(maxV)) return [minV, maxV];
+    if (maxV < minV) [minV, maxV] = [maxV, minV];
+    const span = maxV - minV;
+    if (span <= 0) return [minV, maxV];
+    const raw = span / Math.max(2, maxTicks);
+    const pow10 = Math.pow(10, Math.floor(Math.log10(raw)));
+    const candidates = [1, 2, 5, 10].map(m => m * pow10);
+    let step = candidates[0];
+    for (const s of candidates) {
+        if (span / s <= maxTicks) { step = s; break; }
+        step = s; // fallback to largest if none under maxTicks
     }
-    // Filter out ticks outside the explicit range (especially if min/max are not multiples of 100)
-    return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    const start = Math.ceil(minV / step) * step;
+    const ticks = [];
+    for (let v = start; v <= maxV + 1e-9; v += step) {
+        ticks.push(Number(v.toFixed(6)));
+        if (ticks.length > maxTicks + 2) break; // safety
+    }
+    if (ticks.length === 0 || ticks[0] > minV) ticks.unshift(minV);
+    if (ticks[ticks.length - 1] < maxV) ticks.push(maxV);
+    // Ensure uniqueness and ordering
+    return Array.from(new Set(ticks)).sort((a,b)=>a-b);
 }
