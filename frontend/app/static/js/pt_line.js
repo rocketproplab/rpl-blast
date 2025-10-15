@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const WINDOW_SIZE = 10; // Size of the time window in seconds
     const ROLLING_AVG_WINDOW_SIZE = 3; // Size of the rolling average window in seconds
+    // Dynamic Y upper bound behavior
+    const YPAD_RATIO = 0.10;        // 10% of current max
+    const YPAD_MIN_ABS = 5;         // At least 5 units padding
     const sensorData = {
         x: [],
         y: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []),
@@ -155,39 +158,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const newShapes = [];
-            // Add R/Y/G zone shapes based on individual sensor config
-            for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
-                const ptConfig = Config.PRESSURE_TRANSDUCERS[i];
-                const currentXAxisRefZone = i === 0 ? 'x' : `x${i + 1}`;
-                const currentYAxisRefZone = i === 0 ? 'y' : `y${i + 1}`;
-
-                // Green Zone (Safe)
-                newShapes.push({
-                    type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
-                    x0: windowStart, x1: windowEnd, 
-                    y0: ptConfig.min_value, y1: ptConfig.warning_value, 
-                    fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 }
-                });
-                // Orange Zone (Warning)
-                newShapes.push({
-                    type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
-                    x0: windowStart, x1: windowEnd, 
-                    y0: ptConfig.warning_value, y1: ptConfig.danger_value, 
-                    fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 }
-                });
-                // Red Zone (Danger)
-                newShapes.push({
-                    type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
-                    x0: windowStart, x1: windowEnd, 
-                    y0: ptConfig.danger_value, y1: ptConfig.max_value, 
-                    fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }
-                });
-            }
 
             const xaxisUpdates = {};
+            const yaxisUpdates = {};
+            const dynUpperByIndex = {};
             for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
                 const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
                 xaxisUpdates[axisKey] = [windowStart, windowEnd];
+
+                // Compute dynamic Y upper bound per subplot
+                const ptCfg = Config.PRESSURE_TRANSDUCERS[i];
+                const minY = ptCfg.min_value;
+                // Lower limit (floor) for the upper bound to avoid excessive shrinking
+                const minUpperLimit = (typeof ptCfg.min_upper_limit === 'number') ? ptCfg.min_upper_limit : (ptCfg.max_value ?? 100);
+                // Find current window max for this sensor
+                const arr = sensorData.y[i].filter(v => Number.isFinite(v));
+                const currentMax = arr.length ? Math.max(...arr) : minUpperLimit;
+                const padding = Math.max(YPAD_MIN_ABS, currentMax * YPAD_RATIO);
+                const dynUpper = Math.max(minUpperLimit, currentMax + padding);
+                const yKey = i === 0 ? 'yaxis.range' : `yaxis${i + 1}.range`;
+                yaxisUpdates[yKey] = [minY, dynUpper];
+                dynUpperByIndex[i] = dynUpper;
             }
 
             const updateData = {
@@ -203,12 +194,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateData.y.push([...sensorData.y_avg[i]]);
             }
 
+            // Build zone shapes extended to dynamic upper
+            for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+                const ptConfig = Config.PRESSURE_TRANSDUCERS[i];
+                const currentXAxisRefZone = i === 0 ? 'x' : `x${i + 1}`;
+                const currentYAxisRefZone = i === 0 ? 'y' : `y${i + 1}`;
+                const dynUpper = dynUpperByIndex[i] ?? ptConfig.max_value;
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: windowStart, x1: windowEnd,
+                    y0: ptConfig.min_value, y1: ptConfig.warning_value,
+                    fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 } });
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: windowStart, x1: windowEnd,
+                    y0: ptConfig.warning_value, y1: ptConfig.danger_value,
+                    fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 } });
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: windowStart, x1: windowEnd,
+                    y0: ptConfig.danger_value, y1: dynUpper,
+                    fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 } });
+            }
+
             Plotly.update('pt-subplots', {
                 x: updateData.x,
                 y: updateData.y
             }, {
                 shapes: newShapes,
-                ...xaxisUpdates
+                ...xaxisUpdates,
+                ...yaxisUpdates
             });
         }
     };
