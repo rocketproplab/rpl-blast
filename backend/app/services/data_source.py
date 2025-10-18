@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import json
+import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Protocol, Tuple, Union
 import random
@@ -26,6 +27,8 @@ class SimulatorSource:
     update_interval_s: float = 0.1
 
     def initialize(self) -> None:
+        # Anchor time for deterministic waveforms
+        self._t0 = time.time()
         return None
 
     def _rand_in_range(self, min_v: float, max_v: float) -> float:
@@ -38,10 +41,29 @@ class SimulatorSource:
 
     def read_once(self) -> Tuple[Dict[str, Union[List[float], List[bool]]], float]:
         now = time.time()
-        pt = [
-            self._rand_in_range(ptc.get("min_value", 0.0), ptc.get("max_value", 1000.0))
-            for ptc in self.settings.PRESSURE_TRANSDUCERS
-        ]
+        # Pressure transducers: special behavior for GN2 (sine wave + noise)
+        pt: List[float] = []
+        for i, ptc in enumerate(self.settings.PRESSURE_TRANSDUCERS):
+            name = str(ptc.get("name", "")).strip().upper()
+            if name == "GN2":
+                # Sine with 60s period between -30 and 5000 plus noise
+                period = 25.0
+                t = (now - getattr(self, "_t0", now)) / period
+                min_v = -30.0
+                max_v = 5000.0
+                mid = (max_v + min_v) / 2.0
+                amp = (max_v - min_v) / 2.0
+                noise = random.uniform(-50.0, 50.0)
+                val = mid + amp * math.sin(2.0 * math.pi * t) + noise
+                # clamp within the intended range
+                val = max(min_v, min(max_v, val))
+                pt.append(val)
+            else:
+                pt.append(
+                    self._rand_in_range(
+                        float(ptc.get("min_value", 0.0)), float(ptc.get("max_value", 1000.0))
+                    )
+                )
         tc = [
             self._rand_in_range(tcc.get("min_value", 0.0), tcc.get("max_value", 1000.0))
             for tcc in self.settings.THERMOCOUPLES

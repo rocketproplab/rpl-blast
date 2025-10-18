@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const WINDOW_SIZE = 10; // Size of the time window in seconds
     const ROLLING_AVG_WINDOW_SIZE = 3; // Size of the rolling average window in seconds
+    // Dynamic Y upper bound behavior
+    const YPAD_RATIO = 0.10;        // 10% of current max
+    const YPAD_MIN_ABS = 5;         // At least 5 units padding
     const sensorData = {
         x: [],
         y: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []),
@@ -50,6 +53,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Compute dynamic row gap based on number of subplots (tighter when many)
+    const ROWGAP = (function(n){
+        // Slightly larger gaps to improve readability on small subplots
+        if (n >= 6) return 0.06;
+        if (n >= 4) return 0.08;
+        return 0.12;
+    })(Config.NUM_PRESSURE_TRANSDUCERS);
+
     // Create subplot layout with shapes for zones
     const layout = {
         ...PT_PLOT_CONFIG.layout,
@@ -57,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rows: Config.NUM_PRESSURE_TRANSDUCERS,
             columns: 1,
             pattern: 'independent',
-            rowgap: 0.15
+            rowgap: ROWGAP
         },
         shapes: [], // Will be populated with zone rectangles
         showlegend: false,
@@ -92,9 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showline: true, // Show y-axis line
             linecolor: Config.PRESSURE_TRANSDUCERS[i].color, // Color y-axis line
             linewidth: 2,      // Set y-axis line width
-            range: [Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value], // Set Y-axis range
-            tickvals: generateTickVals(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value),
-            ticktext: generateTickVals(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value).map(String)
+            range: [Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value], // Initial Y-axis range
+            tickvals: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15),
+            ticktext: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15).map(String)
         };
     }
 
@@ -155,39 +166,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const newShapes = [];
-            // Add R/Y/G zone shapes based on individual sensor config
-            for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
-                const ptConfig = Config.PRESSURE_TRANSDUCERS[i];
-                const currentXAxisRefZone = i === 0 ? 'x' : `x${i + 1}`;
-                const currentYAxisRefZone = i === 0 ? 'y' : `y${i + 1}`;
-
-                // Green Zone (Safe)
-                newShapes.push({
-                    type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
-                    x0: windowStart, x1: windowEnd, 
-                    y0: ptConfig.min_value, y1: ptConfig.warning_value, 
-                    fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 }
-                });
-                // Orange Zone (Warning)
-                newShapes.push({
-                    type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
-                    x0: windowStart, x1: windowEnd, 
-                    y0: ptConfig.warning_value, y1: ptConfig.danger_value, 
-                    fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 }
-                });
-                // Red Zone (Danger)
-                newShapes.push({
-                    type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
-                    x0: windowStart, x1: windowEnd, 
-                    y0: ptConfig.danger_value, y1: ptConfig.max_value, 
-                    fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }
-                });
-            }
 
             const xaxisUpdates = {};
+            const yaxisUpdates = {};
+            const yTicksUpdates = {};
+            const dynUpperByIndex = {};
             for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
                 const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
                 xaxisUpdates[axisKey] = [windowStart, windowEnd];
+
+                // Compute dynamic Y upper bound per subplot
+                const ptCfg = Config.PRESSURE_TRANSDUCERS[i];
+                const minY = ptCfg.min_value;
+                // Lower limit (floor) for the upper bound to avoid excessive shrinking
+                const minUpperLimit = (typeof ptCfg.min_upper_limit === 'number') ? ptCfg.min_upper_limit : (ptCfg.max_value ?? 100);
+                // Find current window max for this sensor
+                const arr = sensorData.y[i].filter(v => Number.isFinite(v));
+                const currentMax = arr.length ? Math.max(...arr) : minUpperLimit;
+                const padding = Math.max(YPAD_MIN_ABS, currentMax * YPAD_RATIO);
+                const dynUpper = Math.max(minUpperLimit, currentMax + padding);
+                const yKey = i === 0 ? 'yaxis.range' : `yaxis${i + 1}.range`;
+                yaxisUpdates[yKey] = [minY, dynUpper];
+                dynUpperByIndex[i] = dynUpper;
+
+                // Dynamic y ticks
+                const ticks = generateNiceTicks(minY, dynUpper, 15);
+                const yTickValsKey = i === 0 ? 'yaxis.tickvals' : `yaxis${i + 1}.tickvals`;
+                const yTickTextKey = i === 0 ? 'yaxis.ticktext' : `yaxis${i + 1}.ticktext`;
+                yTicksUpdates[yTickValsKey] = ticks;
+                yTicksUpdates[yTickTextKey] = ticks.map(String);
             }
 
             const updateData = {
@@ -203,26 +210,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateData.y.push([...sensorData.y_avg[i]]);
             }
 
+            // Build zone shapes extended to dynamic upper
+            for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+                const ptConfig = Config.PRESSURE_TRANSDUCERS[i];
+                const currentXAxisRefZone = i === 0 ? 'x' : `x${i + 1}`;
+                const currentYAxisRefZone = i === 0 ? 'y' : `y${i + 1}`;
+                const dynUpper = dynUpperByIndex[i] ?? ptConfig.max_value;
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: windowStart, x1: windowEnd,
+                    y0: ptConfig.min_value, y1: ptConfig.warning_value,
+                    fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 } });
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: windowStart, x1: windowEnd,
+                    y0: ptConfig.warning_value, y1: ptConfig.danger_value,
+                    fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 } });
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: windowStart, x1: windowEnd,
+                    y0: ptConfig.danger_value, y1: dynUpper,
+                    fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 } });
+            }
+
             Plotly.update('pt-subplots', {
                 x: updateData.x,
                 y: updateData.y
             }, {
                 shapes: newShapes,
-                ...xaxisUpdates
+                ...xaxisUpdates,
+                ...yaxisUpdates,
+                ...yTicksUpdates
             });
         }
     };
 });
 
-function generateTickVals(axisMin, axisMax) {
-    const ticks = [axisMin, axisMax];
-    let current = Math.ceil(axisMin / 100) * 100;
-    while (current < axisMax) {
-        if (current > axisMin) {
-            ticks.push(current);
-        }
-        current += 100;
+function generateNiceTicks(minV, maxV, maxTicks) {
+    // Generate <= maxTicks "nice" tick positions from minV to maxV
+    if (!isFinite(minV) || !isFinite(maxV)) return [minV, maxV];
+    if (maxV < minV) [minV, maxV] = [maxV, minV];
+    const span = maxV - minV;
+    if (span <= 0) return [minV, maxV];
+    const raw = span / Math.max(2, maxTicks);
+    const pow10 = Math.pow(10, Math.floor(Math.log10(raw)));
+    const candidates = [1, 2, 5, 10].map(m => m * pow10);
+    let step = candidates[0];
+    for (const s of candidates) {
+        if (span / s <= maxTicks) { step = s; break; }
+        step = s; // fallback to largest if none under maxTicks
     }
-    // Filter out ticks outside the explicit range (especially if min/max are not multiples of 100)
-    return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    const start = Math.ceil(minV / step) * step;
+    const ticks = [];
+    for (let v = start; v <= maxV + 1e-9; v += step) {
+        ticks.push(Number(v.toFixed(6)));
+        if (ticks.length > maxTicks + 2) break; // safety
+    }
+    if (ticks.length === 0 || ticks[0] > minV) ticks.unshift(minV);
+    if (ticks[ticks.length - 1] < maxV) ticks.push(maxV);
+    // Ensure uniqueness and ordering
+    return Array.from(new Set(ticks)).sort((a,b)=>a-b);
 }

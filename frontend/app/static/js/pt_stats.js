@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const WINDOW_SIZE = 10; // seconds, should match other plots
+    const WINDOW_SIZE = 10; // seconds, smoothing window for stats
+    const RATE_SECONDS = 60; // scale rate as change per 60 seconds
 
     // Store data history for each sensor: { sensorName: [{time: t, value: v}, ...], ... }
     const sensorHistories = {};
@@ -71,10 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 if (currentTime - actualWindowStartPoint.time > 0) { // Avoid division by zero
-                     // Rate based on change over the actual duration of available data in window, scaled to 10s
+                    // Rate based on change over the actual duration of available data in window, scaled to RATE_SECONDS
                     const duration = currentTime - actualWindowStartPoint.time;
                     if (duration > 0.1) { // only calc if duration is somewhat significant
-                         rateOfChange = (latestValue - actualWindowStartPoint.value) / duration * WINDOW_SIZE;
+                        rateOfChange = (latestValue - actualWindowStartPoint.value) / duration * RATE_SECONDS;
                     } else {
                         rateOfChange = 0; // or handle as N/A if duration is too short
                     }
