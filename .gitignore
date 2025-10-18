@@ -9,9 +9,11 @@ htmlcov/
 # vibe
 .kiro/
 CLAUDE.md
+.claude/
 
 # logs
 logs/
+frontend/logs/
 
 # backend runtime state
 backend/app/state/*.yaml
