@@ -6,6 +6,8 @@ import logging
 import logging.config
 import json
 import time
+import csv
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -30,6 +32,7 @@ class LoggerManager:
         self.performance_log = self.log_dir / "performance.jsonl"
         self.errors_log = self.log_dir / "errors.jsonl"
         self.system_log = self.log_dir / "system.log"
+        self.data_csv_log = self.log_dir / "data.csv"
         
         # Create "latest" symlink to current run directory
         self._create_latest_symlink()
@@ -97,6 +100,36 @@ class LoggerManager:
             self.stats['data_writes'] += 1
         except Exception as e:
             self.logger.error(f"Failed to log data: {e}")
+
+
+    def log_data_csv(self, timestamp: float, raw: Dict, adjusted: Dict, offsets: Dict):
+        """Log sensor data to data.csv"""
+        try:
+            if not os.path.exists(self.data_csv_log):
+                header =( 
+                    ["ts"] +
+                    [key for key in ()]
+                    )
+                with open(self.data_csv_log, 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    
+
+
+            print("am i gonig in here")
+            combined = (
+                [timestamp] +
+                [item for data in (raw, adjusted) for arr in data.values() for item in arr] +
+                [offset for offset in offsets.values()] +
+                [time.time()]
+                )
+            print(combined)
+            with open(self.data_csv_log, 'a', newline='') as f:
+                print("im lkahgdagkfdsjgkgdajhgagk")
+                writer = csv.writer(f)
+                writer.writerow(combined)
+        except Exception as e:
+            self.logger.error(f"Failed to log data: {e}")
+
     
     def log_event(self, event_type: str, message: str, data: Optional[Dict] = None):
         """Log application events to events.jsonl"""
@@ -184,7 +217,8 @@ class LoggerManager:
                 'serial': str(self.serial_log),
                 'performance': str(self.performance_log),
                 'errors': str(self.errors_log),
-                'system': str(self.system_log)
+                'system': str(self.system_log),
+                'data-csv': str(self.data_csv_log)
             }
         }
     
