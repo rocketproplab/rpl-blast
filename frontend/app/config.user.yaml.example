@@ -1,0 +1,16 @@
+# BLAST User Configuration Example
+# Copy this file to config.user.yaml and customize for your setup
+# This file will be gitignored and won't be overwritten by updates
+
+# Your local serial port settings
+data_source: "serial"  # or "simulator" for testing
+serial_port: "/dev/cu.usbmodem21301"  # Update this for your system
+serial_baudrate: 115200
+
+# Uncomment to override specific sensor settings if needed
+# subpage1:
+#   pressure_transducers:
+#     - name: "Custom PT Name"
+#       id: "pt1"
+#       color: "#FF0000"
+#       # ... other settings

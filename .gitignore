@@ -18,6 +18,8 @@ frontend/logs/
 # backend runtime state
 backend/app/state/*.yaml
 
-# config
+# config (user-specific configs)
 config.py
 config.yaml
+config.user.yaml
+frontend/app/config.user.yaml

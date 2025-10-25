@@ -38,16 +38,54 @@ def _require_key(obj: Dict[str, Any], key: str) -> Any:
     return obj[key]
 
 
-def load_settings(path: Path) -> Settings:
+def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Deep merge two dictionaries, with override taking precedence."""
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def load_settings(config_path: Path) -> Settings:
+    """Load settings from layered config: base + user overrides."""
+    config_dir = config_path.parent
+    base_config_path = config_dir / "config.base.yaml"
+    user_config_path = config_dir / "config.user.yaml"
+    
+    # Load base configuration (required)
     try:
-        with path.open("r") as f:
-            data = yaml.safe_load(f)
+        with base_config_path.open("r") as f:
+            base_data = yaml.safe_load(f)
     except FileNotFoundError:
-        print(f"FATAL: missing config at {path}", file=sys.stderr)
-        raise SystemExit(1)
+        # Fallback to legacy single config file for backwards compatibility
+        try:
+            with config_path.open("r") as f:
+                data = yaml.safe_load(f)
+        except FileNotFoundError:
+            print(f"FATAL: missing config at {config_path} or {base_config_path}", file=sys.stderr)
+            raise SystemExit(1)
+        except Exception as e:
+            print(f"FATAL: invalid config at {config_path}: {e}", file=sys.stderr)
+            raise SystemExit(1)
     except Exception as e:
-        print(f"FATAL: invalid config at {path}: {e}", file=sys.stderr)
+        print(f"FATAL: invalid base config at {base_config_path}: {e}", file=sys.stderr)
         raise SystemExit(1)
+    else:
+        # Load user overrides (optional)
+        user_data = {}
+        if user_config_path.exists():
+            try:
+                with user_config_path.open("r") as f:
+                    user_data = yaml.safe_load(f) or {}
+                print(f"Loaded user config overrides from {user_config_path}", file=sys.stderr)
+            except Exception as e:
+                print(f"WARNING: invalid user config at {user_config_path}: {e}", file=sys.stderr)
+        
+        # Merge base + user configs
+        data = _deep_merge(base_data, user_data)
 
     # Core
     data_source = _require_key(data, "data_source")
