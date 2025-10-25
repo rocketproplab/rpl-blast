@@ -1,5 +1,7 @@
 # rpl-blast
 
+New to the project? Start with the onboarding guide: [ONBOARDING.md](ONBOARDING.md).
+
 ## One-click Setup (No Python required)
 Use the scripts in `scripts/` for the simplest experience.
 
@@ -51,30 +53,7 @@ Notes:
 - Logs stream to `frontend/logs/data.jsonl`.
 
 ## Legacy Flask (Deprecated)
-The legacy Flask runner is deprecated in favor of the FastAPI app. Templates and static assets are reused, but Flask blueprints and legacy modules are no longer maintained in this branch.
-If needed, use the `legacy` branch (or the pre‑migration tag) to run the old Flask app. For reference only:
-### Check COM port on Windows:
-```bash
-# Check you are in root directory of this repository
-conda activate RPL
-python serial_test.py
-```
-The expected output will be similar to:
-```bash
-(blast) C:\RPL\rpl-blast>python serial_test.py
-2025-06-18 14:08:26,544 [DEBUG] Enumerating serial ports...
-2025-06-18 14:08:26,570 [INFO] COM5 — Arduino Mega 2560 (COM5)
-```
-Take note of the name of the port before the dash, e.g. COM5.
-In `frontend/app/config.yaml`, replace the value of `serial_port` with the string of the name of the port, (e.g. `serial_port: "COM5"`)
-### Running the GUI
-```bash
-# Check you are in the correct directory
-cd "BLAST_web plotly subplot"
-conda activate RPL
-python run.py
-```
-Then open http://127.0.0.1:5000 in your web browser (legacy only).
+The legacy Flask runner is deprecated in favor of the FastAPI app and is no longer maintained in this branch. For historical reference, use the `legacy` branch or pre‑migration tag.
 
 ## Project Structure (current)
 ```
@@ -83,7 +62,6 @@ rpl-blast/
 ├── frontend/app/           # Templates, static, config.yaml
 ├── frontend/logs/          # Runtime logs (data.jsonl, offsets)
 ├── scripts/                # One‑click setup/start/uninstall
-├── tools/                  # Utilities (e.g., migrate_static.py)
 ├── environment.yaml        # Conda environment (optional)
 └── README.md
 ```

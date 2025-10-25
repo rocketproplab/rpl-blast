@@ -1,7 +1,7 @@
 """FastAPI application package for RPL‑BLAST.
 
-This package is intentionally isolated from the legacy Flask app under
-"BLAST_web plotly subplot/" and serves the same pages and /data endpoint
-using the simulator by default. Serial support is stubbed for now.
+Serves the same pages and `/data` endpoint as the prior Flask app,
+now using the FastAPI backend under `backend/` and templates/static
+from `frontend/app/`. The simulator is the default data source; serial
+support is wired behind the same interface.
 """
-

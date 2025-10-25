@@ -24,12 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }));
 
-    // Determine overall min and max for Y-axis range from all PTs
+    // Determine overall min for Y-axis range from all PTs
     let overallMinY = Infinity;
-    let overallMaxY = -Infinity;
+    let overallMaxCfg = -Infinity;
     Config.PRESSURE_TRANSDUCERS.forEach(pt => {
         if (pt.min_value < overallMinY) overallMinY = pt.min_value;
-        if (pt.max_value > overallMaxY) overallMaxY = pt.max_value;
+        if (pt.max_value > overallMaxCfg) overallMaxCfg = pt.max_value;
     });
 
     // Create layout
@@ -71,9 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
             gridcolor: '#f0f0f0',
             zeroline: true,
             zerolinecolor: '#f0f0f0',
-            range: [overallMinY, overallMaxY], // Explicitly set Y-axis range here
-            tickvals: generateTickVals(overallMinY, overallMaxY),
-            ticktext: generateTickVals(overallMinY, overallMaxY).map(String)
+            range: [overallMinY, overallMaxCfg], // Initialize; will be updated reactively
+            tickvals: generateTickVals(overallMinY, overallMaxCfg),
+            ticktext: generateTickVals(overallMinY, overallMaxCfg).map(String)
         },
         shapes: [] // Will be populated with zone rectangles
     };
@@ -120,7 +120,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         sensorData.y.forEach(arr => arr.shift());
                     }
 
-                    // Update shapes for the moving time window using the first PT's config for zones
+                    // Compute dynamic upper bound across all sensors in-window
+                    const allVals = sensorData.y.flat().filter(v => Number.isFinite(v));
+                    const currentMax = allVals.length ? Math.max(...allVals) : overallMaxCfg;
+                    const pad = Math.max(5, currentMax * 0.10); // 10% padding or 5 units
+                    const minUpperLimit = overallMaxCfg || 100;  // floor for upper bound
+                    const dynUpper = Math.max(minUpperLimit, currentMax + pad);
+
+                    // Update shapes for the moving time window using first PT's thresholds and dynamic upper
                     let newShapes = [];
                     if (Config.PRESSURE_TRANSDUCERS.length > 0) {
                         const firstPTConfig = Config.PRESSURE_TRANSDUCERS[0];
@@ -133,11 +140,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             { type: 'rect', x0: windowStart, x1: windowEnd, 
                               y0: firstPTConfig.warning_value, y1: firstPTConfig.danger_value, 
                               fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 }, layer: 'below' },
-                            // Red Zone
+                            // Red Zone extended to dynamic upper
                             { type: 'rect', x0: windowStart, x1: windowEnd, 
-                              y0: firstPTConfig.danger_value, y1: firstPTConfig.max_value, 
+                              y0: firstPTConfig.danger_value, y1: dynUpper, 
                               fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }, layer: 'below' }
-                    ];
+                        ];
                     }
 
                     // Update the plot with new data and ranges
@@ -149,7 +156,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     Plotly.update('pt-agg-plot', updateData, {
                         shapes: newShapes,
-                        'xaxis.range': [windowStart, windowEnd]
+                        'xaxis.range': [windowStart, windowEnd],
+                        'yaxis.range': [overallMinY, dynUpper],
+                        'yaxis.tickvals': generateTickVals(overallMinY, dynUpper),
+                        'yaxis.ticktext': generateTickVals(overallMinY, dynUpper).map(String)
                     });
 
                     // Now, call the function in pt_line.js to update subplots with the SAME data
