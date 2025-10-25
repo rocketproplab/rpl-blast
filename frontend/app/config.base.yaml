@@ -1,16 +1,13 @@
-# BLAST Base Configuration - DO NOT EDIT
-# This file is version controlled and contains system defaults
-# User customizations should go in config.user.yaml
+# BLAST Web and Data Configuration
 
-# Default Data Source (can be overridden by user)
-data_source: "simulator"
+# Data Source
+data_source: "simulator"  # "serial" or "simulator"
 
-# Default Serial Configuration (should be overridden by user)
-serial_port: "/dev/ttyUSB0"
+# Serial Configuration
+serial_port: "/dev/cu.usbmodem21301"
 serial_baudrate: 115200
 
-# Sensor Definitions - SYSTEM MANAGED
-# These are maintained by the development team
+# subpage 1
 subpage1:
   title: "Pressure Transducers"
   description: "Pressure measurements from pressure transducers"
@@ -50,7 +47,22 @@ subpage1:
       max_value: 500
       warning_value: 250
       danger_value: 400
+    - name: "LOG DOME"
+      id: "pt6"
+      color: "#009E73"  # Green
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
+    - name: "LNG DOME"
+      id: "pt7"
+      color: "#D55E00"  # Purple
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
 
+# subpage 2
 subpage2:
   title: "Thermocouples & Load Cells"
   description: "Temperature measurements from thermocouples and load cells"
@@ -99,6 +111,7 @@ subpage2:
       warning_value: 250
       danger_value: 400
 
+# subpage 3
 subpage3:
   title: "Flow Control Valves"
   description: "Flow control measurements from flow control valves"
