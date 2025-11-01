@@ -26,6 +26,7 @@ class CalibrationStore:
 
     def load(self) -> Dict[str, float]:
         if not self.path.exists():
+            print("No offsets so i am returnnig an empty map lol good luck")
             return {}
         with self.path.open("r") as f:
             data = yaml.safe_load(f) or {}
@@ -36,6 +37,7 @@ class CalibrationStore:
                 if not _is_finite_number(v):
                     raise ValueError(f"invalid offset for {k}")
                 out[str(k)] = float(v)
+            print(out)
             return out
 
     def save(self, offsets: Dict[str, float]) -> None:
@@ -101,10 +103,12 @@ class CalibrationService:
             self._offsets = new_map
             return dict(new_map)
 
-    def reset(self) -> Dict[str, float]:
+    def reset(self, raw_map: Dict[str, float]) -> Dict[str, float]:
         """Clear all offsets (equivalent to setting every offset to 0.0)."""
         with self._lock:
             new_map: Dict[str, float] = {}
+            for sid, _ in raw_map.items():
+                new_map[sid] = 0.0
             self.store.save(new_map)
             self._offsets = new_map
             return dict(new_map)

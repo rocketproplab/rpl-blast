@@ -102,23 +102,28 @@ class LoggerManager:
             self.logger.error(f"Failed to log data: {e}")
 
 
-    def log_data_csv(self, timestamp: float, raw: Dict, adjusted: Dict, offsets: Dict):
+    def log_data_csv(self, timestamp: float, raw: Dict, adjusted: Dict, offsets: Dict, settings):
         """Log sensor data to data.csv"""
         try:
             if not os.path.exists(self.data_csv_log):
+                print("No header: i am writing the header")
                 header =( 
                     ["ts"] +
-                    [key for key in ()]
+                    [("raw_" + rawKeys) for rawKeys in raw] + 
+                    [("adjusted_" + adjustedKeys) for adjustedKeys in adjusted] + 
+                    [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
+                    # [("offset_" + pt.get("id")) for pt in settings.THERMOCOUPLES] +
+                    # [("offset_" + pt.get("id")) for pt in settings.LOAD_CELLS] +
+                    ["logged_at"]
                     )
                 with open(self.data_csv_log, 'a', newline='') as f:
                     writer = csv.writer(f)
+                    writer.writerow(header)
                     
-
-
             print("am i gonig in here")
             combined = (
                 [timestamp] +
-                [item for data in (raw, adjusted) for arr in data.values() for item in arr] +
+                [sensorValue for sensorType in (raw, adjusted) for sensorMeasurements in sensorType.values() for sensorValue in sensorMeasurements] +
                 [offset for offset in offsets.values()] +
                 [time.time()]
                 )
@@ -129,6 +134,9 @@ class LoggerManager:
                 writer.writerow(combined)
         except Exception as e:
             self.logger.error(f"Failed to log data: {e}")
+
+
+
 
     
     def log_event(self, event_type: str, message: str, data: Optional[Dict] = None):
