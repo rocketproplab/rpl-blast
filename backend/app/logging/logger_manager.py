@@ -111,25 +111,26 @@ class LoggerManager:
                     ["ts"] +
                     [("raw_" + rawKeys) for rawKeys in raw] + 
                     [("adjusted_" + adjustedKeys) for adjustedKeys in adjusted] + 
-                    [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
-                    # [("offset_" + pt.get("id")) for pt in settings.THERMOCOUPLES] +
-                    # [("offset_" + pt.get("id")) for pt in settings.LOAD_CELLS] +
+                    # [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
+                    [("offset_" + pt.get("id")) for pt in settings.PRESSURE_TRANSDUCERS] +
+                    [("offset_" + pt.get("id")) for pt in settings.THERMOCOUPLES] +
+                    [("offset_" + pt.get("id")) for pt in settings.LOAD_CELLS] +
                     ["logged_at"]
                     )
                 with open(self.data_csv_log, 'a', newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow(header)
                     
-            print("am i gonig in here")
+            #print("am i gonig in here")
             combined = (
                 [timestamp] +
                 [sensorValue for sensorType in (raw, adjusted) for sensorMeasurements in sensorType.values() for sensorValue in sensorMeasurements] +
                 [offset for offset in offsets.values()] +
                 [time.time()]
                 )
-            print(combined)
+            #print(combined)
             with open(self.data_csv_log, 'a', newline='') as f:
-                print("im lkahgdagkfdsjgkgdajhgagk")
+                #print("im lkahgdagkfdsjgkgdajhgagk")
                 writer = csv.writer(f)
                 writer.writerow(combined)
         except Exception as e:

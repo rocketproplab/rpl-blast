@@ -7,7 +7,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict
+from typing import Dict, Any
 
 import yaml
 
@@ -60,9 +60,20 @@ class CalibrationService:
     _offsets: Dict[str, float] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
-    def initialize(self) -> None:
+    def initialize(self,settings) -> None:
         with self._lock:
-            self._offsets = self.store.load()
+            new_map: Dict[str, float] = {}
+            
+            #Create a new map and add each pt id and set to 0.
+            for pt in settings.PRESSURE_TRANSDUCERS:
+                new_map[pt.get("id")] = 0.0
+            for pt in settings.THERMOCOUPLES:
+                new_map[pt.get("id")] = 0.0
+            for pt in settings.LOAD_CELLS:
+                new_map[pt.get("id")] = 0.0
+                
+            self.store.save(new_map)
+            self._offsets = new_map
 
     def get(self) -> Dict[str, float]:
         with self._lock:

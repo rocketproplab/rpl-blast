@@ -127,7 +127,7 @@ def create_app() -> FastAPI:
             calib_path = logs_dir / 'calibration_offsets.yaml'
             store = CalibrationStore(path=calib_path)
             calib = CalibrationService(store)
-            calib.initialize()
+            calib.initialize(settings)
             app.state.calibration = calib
         except Exception as e:
             app.state.healthy = False
