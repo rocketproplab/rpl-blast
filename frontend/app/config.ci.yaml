@@ -41,6 +41,13 @@ subpage1:
       max_value: 500
       warning_value: 250
       danger_value: 400
+    - name: "Test PT 5"
+      id: "pt5"
+      color: "#19df37"  # Green
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
 
 
 # subpage 2

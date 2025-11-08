@@ -109,12 +109,13 @@ class LoggerManager:
                 print("No header: i am writing the header")
                 header =( 
                     ["ts"] +
-                    [("raw_" + rawKeys) for rawKeys in raw] + 
-                    [("adjusted_" + adjustedKeys) for adjustedKeys in adjusted] + 
-                    # [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
-                    [("offset_" + pt.get("id")) for pt in settings.PRESSURE_TRANSDUCERS] +
-                    [("offset_" + pt.get("id")) for pt in settings.THERMOCOUPLES] +
-                    [("offset_" + pt.get("id")) for pt in settings.LOAD_CELLS] +
+                    [("raw_" + rawKeys.get("id")) for rawKeys in settings.PRESSURE_TRANSDUCERS] +
+                    [("raw_" + rawKeys.get("id")) for rawKeys in settings.THERMOCOUPLES] +
+                    [("raw_" + rawKeys.get("id")) for rawKeys in settings.LOAD_CELLS] +
+                    [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.PRESSURE_TRANSDUCERS] +
+                    [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.THERMOCOUPLES] +
+                    [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.LOAD_CELLS] +
+                    [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
                     ["logged_at"]
                     )
                 with open(self.data_csv_log, 'a', newline='') as f:
@@ -124,7 +125,9 @@ class LoggerManager:
             #print("am i gonig in here")
             combined = (
                 [timestamp] +
-                [sensorValue for sensorType in (raw, adjusted) for sensorMeasurements in sensorType.values() for sensorValue in sensorMeasurements] +
+                [rawVal for rawArr in raw.values() for rawVal in rawArr] + 
+                [adjustedVal for adjustedArr in adjusted.values() for adjustedVal in adjustedArr] +
+                # [sensorValue for sensorType in (raw, adjusted) for sensorMeasurements in sensorType.values() for sensorValue in sensorMeasurements] +
                 [offset for offset in offsets.values()] +
                 [time.time()]
                 )
