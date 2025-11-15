@@ -127,13 +127,10 @@ class LoggerManager:
                 [timestamp] +
                 [rawVal for rawArr in raw.values() for rawVal in rawArr] + 
                 [adjustedVal for adjustedArr in adjusted.values() for adjustedVal in adjustedArr] +
-                # [sensorValue for sensorType in (raw, adjusted) for sensorMeasurements in sensorType.values() for sensorValue in sensorMeasurements] +
                 [offset for offset in offsets.values()] +
                 [time.time()]
                 )
-            #print(combined)
             with open(self.data_csv_log, 'a', newline='') as f:
-                #print("im lkahgdagkfdsjgkgdajhgagk")
                 writer = csv.writer(f)
                 writer.writerow(combined)
         except Exception as e:
