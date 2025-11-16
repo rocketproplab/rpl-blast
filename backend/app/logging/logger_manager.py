@@ -6,6 +6,8 @@ import logging
 import logging.config
 import json
 import time
+import csv
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -30,6 +32,7 @@ class LoggerManager:
         self.performance_log = self.log_dir / "performance.jsonl"
         self.errors_log = self.log_dir / "errors.jsonl"
         self.system_log = self.log_dir / "system.log"
+        self.data_csv_log = self.log_dir / "data.csv"
         
         # Create "latest" symlink to current run directory
         self._create_latest_symlink()
@@ -83,10 +86,19 @@ class LoggerManager:
             )
     
     def log_data(self, timestamp: float, raw: Dict, adjusted: Dict, offsets: Dict):
-        """Log sensor data to data.jsonl"""
+        """
+        Log sensor data to data.jsonl
+        recieved_at; time in unix when data was recieved
+        t: time in seconds since start
+        raw: array of raw data for each sensor
+        adjusted: arr of adj data (raw + offset) for each sensor
+        offsets: the offsets for each sensor
+        logged_at: time when data was written to log in unix
+        """
         try:
             entry = {
-                'ts': timestamp,
+                'recieved_at': timestamp,
+                't_seconds' : timestamp - self.stats["start_time"],
                 'raw': raw,
                 'adjusted': adjusted,
                 'offsets': offsets,
@@ -97,12 +109,49 @@ class LoggerManager:
             self.stats['data_writes'] += 1
         except Exception as e:
             self.logger.error(f"Failed to log data: {e}")
+
+
+    def log_data_csv(self, timestamp: float, raw: Dict, adjusted: Dict, offsets: Dict, settings):
+        """Log sensor data to data.csv"""
+        try:
+            if not os.path.exists(self.data_csv_log):
+                header =( 
+                    ["recieved_at"] +
+                    ["t_seconds"] +
+                    [("raw_" + rawKeys.get("id")) for rawKeys in settings.PRESSURE_TRANSDUCERS] +
+                    [("raw_" + rawKeys.get("id")) for rawKeys in settings.THERMOCOUPLES] +
+                    [("raw_" + rawKeys.get("id")) for rawKeys in settings.LOAD_CELLS] +
+                    [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.PRESSURE_TRANSDUCERS] +
+                    [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.THERMOCOUPLES] +
+                    [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.LOAD_CELLS] +
+                    [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
+                    ["logged_at"]
+                    )
+                with open(self.data_csv_log, 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(header)
+                    
+            combined = (
+                [timestamp] +
+                [timestamp - self.stats["start_time"]] +
+                [rawVal for rawArr in raw.values() for rawVal in rawArr] + 
+                [adjustedVal for adjustedArr in adjusted.values() for adjustedVal in adjustedArr] +
+                [offset for offset in offsets.values()] +
+                [time.time()]
+                )
+            
+            with open(self.data_csv_log, 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(combined)
+        except Exception as e:
+            self.logger.error(f"Failed to log data: {e}")
     
     def log_event(self, event_type: str, message: str, data: Optional[Dict] = None):
         """Log application events to events.jsonl"""
         try:
             entry = {
                 'timestamp': time.time(),
+                't_seconds' : time.time() - self.stats["start_time"],
                 'event_type': event_type,
                 'message': message,
                 'data': data or {},
@@ -119,6 +168,7 @@ class LoggerManager:
         try:
             entry = {
                 'timestamp': time.time(),
+                't_seconds' : time.time() - self.stats["start_time"],
                 'direction': direction,  # 'read' or 'write'
                 'port': port,
                 'data': data,
@@ -137,6 +187,7 @@ class LoggerManager:
         try:
             entry = {
                 'timestamp': time.time(),
+                't_seconds' : time.time() - self.stats["start_time"],
                 'metric_type': metric_type,
                 'value': value,
                 'unit': unit,
@@ -153,6 +204,7 @@ class LoggerManager:
         try:
             entry = {
                 'timestamp': time.time(),
+                't_seconds' : time.time() - self.stats["start_time"],
                 'error_type': error_type,
                 'message': message,
                 'exception': str(exception) if exception else None,
@@ -184,7 +236,8 @@ class LoggerManager:
                 'serial': str(self.serial_log),
                 'performance': str(self.performance_log),
                 'errors': str(self.errors_log),
-                'system': str(self.system_log)
+                'system': str(self.system_log),
+                'data-csv': str(self.data_csv_log)
             }
         }
     

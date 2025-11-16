@@ -58,7 +58,13 @@ def post_zero_all(request: Request) -> Dict[str, Dict[str, float]]:
 @router.post("/api/reset_offsets")
 def post_reset_offsets(request: Request) -> Dict[str, Dict[str, float]]:
     try:
-        merged = request.app.state.calibration.reset()
+        snap = request.app.state.cache.get_full()
+        if not snap:
+            raise HTTPException(status_code=503, detail="no live data")
+        raw = snap.get("raw") or {}
+        settings = request.app.state.settings
+        raw_by_id = _flatten_raw_by_id(raw, settings)
+        merged = request.app.state.calibration.reset(raw_by_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"offsets": merged}

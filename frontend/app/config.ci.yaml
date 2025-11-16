@@ -21,6 +21,35 @@ subpage1:
       max_value: 500
       warning_value: 250
       danger_value: 400
+    - name: "Test PT 2"
+      id: "pt2"
+      color: "#8c22cb"  # Purple
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
+    - name: "Test PT 3"
+      id: "pt3"
+      color: "#cf0b0b"  # Red
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
+    - name: "Test PT 4"
+      id: "pt4"
+      color: "#19df37"  # Green
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
+    - name: "Test PT 5"
+      id: "pt5"
+      color: "#19df37"  # Green
+      min_value: -50
+      max_value: 500
+      warning_value: 250
+      danger_value: 400
+
 
 subpage2:
   title: "Thermocouples & Load Cells"  

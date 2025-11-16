@@ -127,7 +127,7 @@ def create_app() -> FastAPI:
             calib_path = logs_dir / 'calibration_offsets.yaml'
             store = CalibrationStore(path=calib_path)
             calib = CalibrationService(store)
-            calib.initialize()
+            calib.initialize(settings)
             app.state.calibration = calib
         except Exception as e:
             app.state.healthy = False
@@ -177,6 +177,7 @@ def create_app() -> FastAPI:
             
             # Log data using comprehensive logging system
             app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
+            app.state.logger_manager.log_data_csv(ts, raw, adjusted, offsets, app.state.settings)
             
             # Legacy logging fallback
             try:
@@ -226,6 +227,7 @@ def create_app() -> FastAPI:
                     
                     # Log data using comprehensive logging system
                     app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
+                    app.state.logger_manager.log_data_csv(ts, raw, adjusted, offsets, app.state.settings)
                     
                     # Legacy logging fallback
                     try:

@@ -7,7 +7,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict
+from typing import Dict, Any
 
 import yaml
 
@@ -26,6 +26,7 @@ class CalibrationStore:
 
     def load(self) -> Dict[str, float]:
         if not self.path.exists():
+            print("No offsets so i am returnnig an empty map lol good luck")
             return {}
         with self.path.open("r") as f:
             data = yaml.safe_load(f) or {}
@@ -36,6 +37,7 @@ class CalibrationStore:
                 if not _is_finite_number(v):
                     raise ValueError(f"invalid offset for {k}")
                 out[str(k)] = float(v)
+            print(out)
             return out
 
     def save(self, offsets: Dict[str, float]) -> None:
@@ -58,9 +60,20 @@ class CalibrationService:
     _offsets: Dict[str, float] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
-    def initialize(self) -> None:
+    def initialize(self,settings) -> None:
         with self._lock:
-            self._offsets = self.store.load()
+            new_map: Dict[str, float] = {}
+            
+            #Create a new map and add each pt id and set to 0.
+            for pt in settings.PRESSURE_TRANSDUCERS:
+                new_map[pt.get("id")] = 0.0
+            for pt in settings.THERMOCOUPLES:
+                new_map[pt.get("id")] = 0.0
+            for pt in settings.LOAD_CELLS:
+                new_map[pt.get("id")] = 0.0
+                
+            self.store.save(new_map)
+            self._offsets = new_map
 
     def get(self) -> Dict[str, float]:
         with self._lock:
@@ -101,10 +114,12 @@ class CalibrationService:
             self._offsets = new_map
             return dict(new_map)
 
-    def reset(self) -> Dict[str, float]:
+    def reset(self, raw_map: Dict[str, float]) -> Dict[str, float]:
         """Clear all offsets (equivalent to setting every offset to 0.0)."""
         with self._lock:
             new_map: Dict[str, float] = {}
+            for sid, _ in raw_map.items():
+                new_map[sid] = 0.0
             self.store.save(new_map)
             self._offsets = new_map
             return dict(new_map)
