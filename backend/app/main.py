@@ -24,7 +24,7 @@ from .config.loader import load_settings
 from .routers import data as data_router
 from .routers import pages as pages_router
 from .routers import calibration as calibration_router
-from .services.data_source import SimulatorSource, SerialSource
+from .services.data_source_offloaded import SimulatorSource, SerialSource
 from .services.calibration import CalibrationService, CalibrationStore
 from .services.reading_cache import LatestReadingCache
 from .version import get_version
