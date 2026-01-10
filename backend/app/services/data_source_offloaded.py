@@ -247,30 +247,17 @@ class SerialSource:
                 self._buffer.extend(new_data)
                 
                 # Log raw bytes if logger is active (optional, can be noisy)
-                # if self._serial_logger:
-                #     self._serial_logger.log_data_read(new_data.hex(), self._port, True)
+                if self._serial_logger:
+                    self._serial_logger.log_data_read(new_data.hex(), self._port, True)
 
             # 2. Process 2-byte chunks [High Byte, Low Byte]
             # Protocol: 16 bits = [6 bit ID] [10 bit Value]
-            # We assume Big Endian or Little Endian? 
-            # usually sending `(id << 10) | value` as a uint16_t results in:
-            # Little Endian (standard): [Low Byte, High Byte]
-            # Big Endian (network):     [High Byte, Low Byte]
-            # I will assume Little Endian (Arduino default) for now.
             
             while len(self._buffer) >= 2:
                 # Pop 2 bytes
                 b1 = self._buffer[0]
                 b2 = self._buffer[1]
                 
-                # Assuming Little Endian (Arduino Standard):
-                # Low byte first? No, usually `Serial.write((uint8_t*)&val, 2)` sends LSB first.
-                # Let's construct the 16-bit integer.
-                # packet = (b2 << 8) | b1
-                
-                # Actually, if the avionics team manually packs bits, they might send High byte first.
-                # Let's try Big Endian (High byte, Low byte) as it's safer for manual bit packing logic.
-                # ADJUST THIS LINE BASED ON FIRMWARE:
                 packet = (b1 << 8) | b2 
 
                 # Decode
