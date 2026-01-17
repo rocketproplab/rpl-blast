@@ -45,7 +45,7 @@ PT_CONFIGS: List[PTSensorConfig] = [
     PTSensorConfig("LOX-UPSTREAM",   "A1", 1000.0, 1.0, 5.0), # Index 1
     PTSensorConfig("LNG-UPSTREAM",   "A2", 1000.0, 1.0, 5.0), # Index 2
     PTSensorConfig("LOX-DOWNSTREAM", "A3", 1000.0, 1.0, 5.0), # Index 3
-    PTSensorConfig("LNG-DOWNSTREAM", "A4", 1000.0, 1.0, 5.0), # Index 4
+    PTSensorConfig("LNG-DOWNSTREAM", "A4", 1500.0, 0.5, 4.5), # Index 4
     PTSensorConfig("LOX-DOME",       "A7", 1500.0, 0.5, 4.5), # Index 5
     PTSensorConfig("LNG-DOME",       "A6", 1500.0, 0.5, 4.5), # Index 6
 ]
