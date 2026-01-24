@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
@@ -24,6 +24,7 @@ from .config.loader import load_settings
 from .routers import data as data_router
 from .routers import pages as pages_router
 from .routers import calibration as calibration_router
+from .routers import analysis as analysis_router
 from .services.data_source import SimulatorSource, SerialSource
 from .services.calibration import CalibrationService, CalibrationStore
 from .services.reading_cache import LatestReadingCache
@@ -92,6 +93,11 @@ def create_app() -> FastAPI:
     app.state.health_error: Optional[str] = None
     app.state.data_log_path: Path = _get_logs_path()
     app.state.data_log_errors: int = 0
+    # Analysis mode state
+    app.state.data_mode: str = "live"  # "live" | "analysis"
+    app.state.live_source: Optional[Union[SimulatorSource, SerialSource]] = None
+    app.state.analysis_source = None
+    app.state.current_run_id: Optional[str] = None
     # Health thresholds (customizable via env)
     import os as _os
     try:
@@ -115,6 +121,7 @@ def create_app() -> FastAPI:
     app.include_router(data_router.router)
     app.include_router(pages_router.router)
     app.include_router(calibration_router.router)
+    app.include_router(analysis_router.router)
 
     @app.on_event("startup")
     async def _startup():
@@ -151,6 +158,9 @@ def create_app() -> FastAPI:
             reason = 'startup configuration'
             
         app.state.event_logger.log_data_source_change('unknown', data_source_name, reason)
+
+        # Store live source for mode switching
+        app.state.live_source = source
 
         try:
             source.initialize()
@@ -202,13 +212,28 @@ def create_app() -> FastAPI:
         async def reader_loop():
             try:
                 while True:
+                    # Determine which source to use based on mode
+                    current_mode = getattr(app.state, 'data_mode', 'live')
+                    if current_mode == "analysis":
+                        current_source = getattr(app.state, 'analysis_source', None)
+                        if current_source is None:
+                            # No analysis source loaded, fall back to live
+                            current_source = app.state.live_source
+                            app.state.data_mode = "live"
+                    else:
+                        current_source = app.state.live_source
+                    
+                    if current_source is None:
+                        await asyncio.sleep(0.1)
+                        continue
+                    
                     # Heartbeat for freeze detection
                     app.state.freeze_detector.heartbeat('data_acquisition')
                     
                     # Measure performance
                     timer_id = app.state.performance_monitor.start_timer('data_read')
                     
-                    value, ts = source.read_once()
+                    value, ts = current_source.read_once()
                     raw = {
                         k: v for k, v in value.items() if k in ("pt", "tc", "lc", "fcv_actual", "fcv_expected")
                     }
@@ -225,22 +250,24 @@ def create_app() -> FastAPI:
                         "value": value_adjusted,
                     })
                     
-                    # Log data using comprehensive logging system
-                    app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
-                    app.state.logger_manager.log_data_csv(ts, raw, adjusted, offsets, app.state.settings)
-                    
-                    # Legacy logging fallback
-                    try:
-                        with app.state.data_log_path.open("a") as f:
-                            f.write(json.dumps({
-                                "ts": ts,
-                                "raw": raw,
-                                "adjusted": adjusted,
-                                "offsets": offsets,
-                            }) + "\n")
-                    except Exception as e:
-                        app.state.data_log_errors += 1
-                        app.state.logger_manager.log_error('file_write_error', f'Failed to write legacy log: {e}')
+                    # Only log data in live mode (analysis data is already logged)
+                    if current_mode == "live":
+                        # Log data using comprehensive logging system
+                        app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
+                        app.state.logger_manager.log_data_csv(ts, raw, adjusted, offsets, app.state.settings)
+                        
+                        # Legacy logging fallback
+                        try:
+                            with app.state.data_log_path.open("a") as f:
+                                f.write(json.dumps({
+                                    "ts": ts,
+                                    "raw": raw,
+                                    "adjusted": adjusted,
+                                    "offsets": offsets,
+                                }) + "\n")
+                        except Exception as e:
+                            app.state.data_log_errors += 1
+                            app.state.logger_manager.log_error('file_write_error', f'Failed to write legacy log: {e}')
                     
                     # End performance measurement
                     app.state.performance_monitor.end_timer(timer_id)
@@ -251,12 +278,15 @@ def create_app() -> FastAPI:
                     app.state.performance_monitor.log_data_lag(lag_ms)
                     
                     # Pace the loop to avoid blocking the event loop
-                    interval = getattr(source, "update_interval_s", 0.1)
+                    interval = getattr(current_source, "update_interval_s", 0.1)
                     await asyncio.sleep(interval)
             except asyncio.CancelledError:
                 app.state.event_logger.log_system_state('data_reader_cancelled', True)
                 # graceful shutdown
-                source.shutdown()
+                if app.state.live_source:
+                    app.state.live_source.shutdown()
+                if getattr(app.state, 'analysis_source', None):
+                    app.state.analysis_source.shutdown()
             except Exception as e:
                 app.state.healthy = False
                 app.state.health_error = f"reader: {e}"
@@ -284,6 +314,12 @@ def create_app() -> FastAPI:
                 await task
             except asyncio.CancelledError:
                 pass
+        
+        # Shutdown sources
+        if app.state.live_source:
+            app.state.live_source.shutdown()
+        if getattr(app.state, 'analysis_source', None):
+            app.state.analysis_source.shutdown()
 
     @app.get("/healthz")
     async def healthz():

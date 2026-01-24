@@ -1,9 +1,65 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const WINDOW_SIZE = 5; // Consistent with TC plots
+    // Default window size, can be overridden by global window.plotWindowSize
+    const DEFAULT_WINDOW_SIZE = 30; // Size of the time window in seconds
+    
+    // Get window size from global variable or use default
+    function getWindowSize() {
+        return window.plotWindowSize || DEFAULT_WINDOW_SIZE;
+    }
 
     const lcSensorData = {
         x: [],
         y: Array(Config.NUM_LOAD_CELLS).fill().map(() => [])
+    };
+    
+    // Function to clear plot data (called when switching to analysis mode)
+    window.clearLCSubplotData = function() {
+        lcSensorData.x = [];
+        lcSensorData.y = Array(Config.NUM_LOAD_CELLS).fill().map(() => []);
+    };
+    
+    // Function to load all analysis data at once
+    window.loadAllLCSubplotAnalysisData = function(allDataEntries) {
+        // Clear existing data
+        lcSensorData.x = [];
+        lcSensorData.y = Array(Config.NUM_LOAD_CELLS).fill().map(() => []);
+        
+        // Load all data points
+        allDataEntries.forEach(entry => {
+            const t = entry.t_seconds || 0;
+            const adjusted = entry.adjusted || {};
+            const lcValues = adjusted.lc || [];
+            
+            lcSensorData.x.push(t);
+            lcValues.forEach((value, i) => {
+                if (i < lcSensorData.y.length) {
+                    lcSensorData.y[i].push(value);
+                }
+            });
+        });
+        
+        // Update plot with all data
+        const updateData = {
+            x: lcSensorData.y.map(() => lcSensorData.x),
+            y: lcSensorData.y
+        };
+        
+        Plotly.update('lc-subplots-plot', updateData, {});
+    };
+    
+    // Function to update plot window based on playback position
+    window.updateLCSubplotWindow = function(currentPosition) {
+        const WINDOW_SIZE = getWindowSize();
+        const windowStart = Math.max(0, currentPosition - WINDOW_SIZE);
+        const windowEnd = currentPosition;
+        
+        const xaxisUpdates = {};
+        for (let i = 0; i < Config.NUM_LOAD_CELLS; i++) {
+            const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
+            xaxisUpdates[axisKey] = [windowStart, windowEnd];
+        }
+        
+        Plotly.relayout('lc-subplots-plot', xaxisUpdates);
     };
 
     const container = document.getElementById('lc-subplots-container');
@@ -33,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let i = 0; i < Config.NUM_LOAD_CELLS; i++) {
         const lcConfig = Config.LOAD_CELLS[i];
         const xAxisNameKey = i === 0 ? 'xaxis' : `xaxis${i + 1}`;
-        layout[xAxisNameKey] = { ...PT_PLOT_CONFIG.axis, title:{...PT_PLOT_CONFIG.axis.title, text:i===Config.NUM_LOAD_CELLS-1?'Time':''}, range:[0,WINDOW_SIZE] };
+        layout[xAxisNameKey] = { ...PT_PLOT_CONFIG.axis, title:{...PT_PLOT_CONFIG.axis.title, text:i===Config.NUM_LOAD_CELLS-1?'Time':''}, range:[0, getWindowSize()] };
         const yAxisNameKey = i === 0 ? 'yaxis' : `yaxis${i + 1}`;
         layout[yAxisNameKey] = {
             ...PT_PLOT_CONFIG.axis,
@@ -55,16 +111,29 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', updateChartDimensions);
 
     window.updateAllLCSubPlots = function(currentTimeFromAgg, lcDataFromAgg) {
+        const isAnalysisMode = window.analysisController && window.analysisController.currentMode === 'analysis';
         const windowStart = Math.max(0, currentTimeFromAgg - WINDOW_SIZE);
         const windowEnd = currentTimeFromAgg;
 
         if (lcDataFromAgg) {
-            lcSensorData.x.push(currentTimeFromAgg);
-            lcDataFromAgg.forEach((value, i) => { lcSensorData.y[i].push(value); });
+            if (isAnalysisMode) {
+                // In analysis mode: all data is already loaded, just update the window
+                // Update the x-axis range to show window around current playback position
+                const xaxisUpdates = {};
+                for (let i = 0; i < Config.NUM_LOAD_CELLS; i++) {
+                    const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
+                    xaxisUpdates[axisKey] = [windowStart, windowEnd];
+                }
+                Plotly.relayout('lc-subplots-plot', xaxisUpdates);
+            } else {
+                // Live mode: original behavior
+                lcSensorData.x.push(currentTimeFromAgg);
+                lcDataFromAgg.forEach((value, i) => { lcSensorData.y[i].push(value); });
 
-            while (lcSensorData.x.length > 0 && lcSensorData.x[0] < windowStart) {
-                lcSensorData.x.shift();
-                lcSensorData.y.forEach(arr => arr.shift());
+                while (lcSensorData.x.length > 0 && lcSensorData.x[0] < windowStart) {
+                    lcSensorData.x.shift();
+                    lcSensorData.y.forEach(arr => arr.shift());
+                }
             }
 
             // let newShapes = [];
@@ -111,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const yAxisNameKey = i === 0 ? 'yaxis' : `yaxis${i + 1}`;
         const lcConfig = Config.LOAD_CELLS[i];
         layout[yAxisNameKey].tickvals = generateTickVals(lcConfig.min_value, lcConfig.max_value);
-        layout[yAxisNameKey].ticktext = layout[yAxisNameKey].tickvals.map(String);
+        layout[yAxisNameKey].ticktext = layout[yAxisNameKey].tickvals.map(t => Math.round(t).toString());
     }
     Plotly.relayout(plotDiv, layout); // Apply new tick PgetNextToken
 }); 

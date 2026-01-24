@@ -1,10 +1,66 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const WINDOW_SIZE = 5; // Size of the time window in seconds, should match tc_agg.js
+    // Default window size, can be overridden by global window.plotWindowSize
+    const DEFAULT_WINDOW_SIZE = 30; // Size of the time window in seconds
+    
+    // Get window size from global variable or use default
+    function getWindowSize() {
+        return window.plotWindowSize || DEFAULT_WINDOW_SIZE;
+    }
 
     const tcSensorData = {
         x: [],
         y: Array(Config.NUM_THERMOCOUPLES).fill().map(() => [])
         // Add y_avg and history here if rolling averages are needed later for TCs
+    };
+    
+    // Function to clear plot data (called when switching to analysis mode)
+    window.clearTCSubplotData = function() {
+        tcSensorData.x = [];
+        tcSensorData.y = Array(Config.NUM_THERMOCOUPLES).fill().map(() => []);
+    };
+    
+    // Function to load all analysis data at once
+    window.loadAllTCSubplotAnalysisData = function(allDataEntries) {
+        // Clear existing data
+        tcSensorData.x = [];
+        tcSensorData.y = Array(Config.NUM_THERMOCOUPLES).fill().map(() => []);
+        
+        // Load all data points
+        allDataEntries.forEach(entry => {
+            const t = entry.t_seconds || 0;
+            const adjusted = entry.adjusted || {};
+            const tcValues = adjusted.tc || [];
+            
+            tcSensorData.x.push(t);
+            tcValues.forEach((value, i) => {
+                if (i < tcSensorData.y.length) {
+                    tcSensorData.y[i].push(value);
+                }
+            });
+        });
+        
+        // Update plot with all data
+        const updateData = {
+            x: Array(Config.NUM_THERMOCOUPLES).fill().map(() => [...tcSensorData.x]),
+            y: tcSensorData.y
+        };
+        
+        Plotly.update('tc-subplots-plot', updateData, {});
+    };
+    
+    // Function to update plot window based on playback position
+    window.updateTCSubplotWindow = function(currentPosition) {
+        const WINDOW_SIZE = getWindowSize();
+        const windowStart = Math.max(0, currentPosition - WINDOW_SIZE);
+        const windowEnd = currentPosition;
+        
+        const xaxisUpdates = {};
+        for (let i = 0; i < Config.NUM_THERMOCOUPLES; i++) {
+            const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
+            xaxisUpdates[axisKey] = [windowStart, windowEnd];
+        }
+        
+        Plotly.relayout('tc-subplots-plot', xaxisUpdates);
     };
 
     const container = document.getElementById('tc-subplots-container');
@@ -57,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...PT_PLOT_CONFIG.axis.title,
                 text: i === Config.NUM_THERMOCOUPLES - 1 ? 'Time' : ''
             },
-            range: [0, WINDOW_SIZE]
+            range: [0, getWindowSize()]
         };
         const yAxisNameKey = i === 0 ? 'yaxis' : `yaxis${i + 1}`;
         layout[yAxisNameKey] = {
@@ -73,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             linewidth: 2,
             range: [Config.THERMOCOUPLES[i].min_value, Config.THERMOCOUPLES[i].max_value],
             tickvals: generateTickVals(Config.THERMOCOUPLES[i].min_value, Config.THERMOCOUPLES[i].max_value),
-            ticktext: generateTickVals(Config.THERMOCOUPLES[i].min_value, Config.THERMOCOUPLES[i].max_value).map(String)
+            ticktext: generateTickVals(Config.THERMOCOUPLES[i].min_value, Config.THERMOCOUPLES[i].max_value).map(t => Math.round(t).toString())
         };
     }
 
@@ -97,20 +153,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     window.updateAllTCSubPlots = function(currentTimeFromAgg, tcDataFromAgg) {
+        const isAnalysisMode = window.analysisController && window.analysisController.currentMode === 'analysis';
         const windowStart = Math.max(0, currentTimeFromAgg - WINDOW_SIZE);
         const windowEnd = currentTimeFromAgg;
 
         if (tcDataFromAgg) {
-            tcSensorData.x.push(currentTimeFromAgg);
-            tcDataFromAgg.forEach((value, i) => {
-                tcSensorData.y[i].push(value);
-                // Handle rolling average data update here if added
-            });
+            if (isAnalysisMode) {
+                // In analysis mode: all data is already loaded, just update the window
+                // Update the x-axis range to show window around current playback position
+                const xaxisUpdates = {};
+                for (let i = 0; i < Config.NUM_THERMOCOUPLES; i++) {
+                    const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
+                    xaxisUpdates[axisKey] = [windowStart, windowEnd];
+                }
+                Plotly.relayout('tc-subplots-plot', xaxisUpdates);
+            } else {
+                // Live mode: original behavior
+                tcSensorData.x.push(currentTimeFromAgg);
+                tcDataFromAgg.forEach((value, i) => {
+                    tcSensorData.y[i].push(value);
+                });
 
-            while (tcSensorData.x.length > 0 && tcSensorData.x[0] < windowStart) {
-                tcSensorData.x.shift();
-                tcSensorData.y.forEach(arr => arr.shift());
-                // Shift rolling average data here if added
+                while (tcSensorData.x.length > 0 && tcSensorData.x[0] < windowStart) {
+                    tcSensorData.x.shift();
+                    tcSensorData.y.forEach(arr => arr.shift());
+                }
             }
 
             // const newShapes = []; 

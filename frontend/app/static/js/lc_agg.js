@@ -1,10 +1,69 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const WINDOW_SIZE = 5; // Consistent with TC plots
+    // Default window size, can be overridden by global window.plotWindowSize
+    const DEFAULT_WINDOW_SIZE = 30; // Size of the time window in seconds
+    
+    // Get window size from global variable or use default
+    function getWindowSize() {
+        return window.plotWindowSize || DEFAULT_WINDOW_SIZE;
+    }
     const UPDATE_INTERVAL = 100; // ms
 
     const lcSensorData = {
         x: [],
         y: Array(Config.NUM_LOAD_CELLS).fill().map(() => [])
+    };
+    let totalDataDuration = 0; // Store total duration of loaded data
+    
+    // Function to clear plot data (called when switching to analysis mode)
+    window.clearLCPlotData = function() {
+        lcSensorData.x = [];
+        lcSensorData.y = Array(Config.NUM_LOAD_CELLS).fill().map(() => []);
+    };
+    
+    // Function to load all analysis data at once
+    window.loadAllLCAnalysisData = function(allDataEntries) {
+        // Clear existing data
+        lcSensorData.x = [];
+        lcSensorData.y = Array(Config.NUM_LOAD_CELLS).fill().map(() => []);
+        
+        // Load all data points
+        allDataEntries.forEach(entry => {
+            const t = entry.t_seconds || 0;
+            const adjusted = entry.adjusted || {};
+            const lcValues = adjusted.lc || [];
+            
+            lcSensorData.x.push(t);
+            lcValues.forEach((value, i) => {
+                if (i < lcSensorData.y.length) {
+                    lcSensorData.y[i].push(value);
+                }
+            });
+        });
+        
+        // Store total duration
+        if (lcSensorData.x.length > 0) {
+            totalDataDuration = lcSensorData.x[lcSensorData.x.length - 1];
+        }
+        
+        // Update plot with all data
+        const updateData = {
+            x: lcSensorData.y.map(() => lcSensorData.x),
+            y: lcSensorData.y
+        };
+        
+        // Note: Color bars for LC would go here if LOAD_CELL_BOUNDARIES is configured
+        Plotly.update('lc-agg-plot', updateData, {});
+    };
+    
+    // Function to update plot window based on playback position
+    window.updateLCPlotWindow = function(currentPosition) {
+        const WINDOW_SIZE = getWindowSize();
+        const windowStart = Math.max(0, currentPosition - WINDOW_SIZE);
+        const windowEnd = currentPosition;
+        
+        Plotly.relayout('lc-agg-plot', {
+            'xaxis.range': [windowStart, windowEnd]
+        });
     };
 
     const container = document.getElementById('lc-agg-container');
@@ -29,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const layout = {
         ...PT_PLOT_CONFIG.layout,
         title: { ...PT_PLOT_CONFIG.title, text: 'Composite Load Cell Readings' },
-        xaxis: { ...PT_PLOT_CONFIG.axis, title: { ...PT_PLOT_CONFIG.axis.title, text: 'Time' }, range: [0, WINDOW_SIZE] },
+        xaxis: { ...PT_PLOT_CONFIG.axis, title: { ...PT_PLOT_CONFIG.axis.title, text: 'Time' }, range: [0, getWindowSize()] },
         yaxis: { ...PT_PLOT_CONFIG.axis, title: { ...PT_PLOT_CONFIG.axis.title, text: 'Load (Units)' }, range: [overallMinY, overallMaxY] },
         showlegend: true,
         legend: { ...PT_PLOT_CONFIG.legend, x: 1, xanchor: 'right', y: 1, orientation: 'v' }
@@ -50,20 +109,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // This function will be called by get_data.js
     window.updateLCPlotsAndStats = function(currentTime, lcDataValues) { // Renamed and params changed
+        const isAnalysisMode = window.analysisController && window.analysisController.currentMode === 'analysis';
         const windowStart = Math.max(0, currentTime - WINDOW_SIZE);
         const windowEnd = currentTime;
 
-        // fetch('/data?type=lc') // Removed, data is passed in (lcDataValues)
-        //     .then(response => response.json())
-        //     .then(data => { // lcDataValues is now passed directly
-        if (lcDataValues) { // Was: data.value && data.value.lc
-            const newLCValues = lcDataValues; // Use the passed data
-            lcSensorData.x.push(currentTime);
-            newLCValues.forEach((value, i) => { lcSensorData.y[i].push(value); });
+        if (lcDataValues) {
+            const newLCValues = lcDataValues;
 
-            while (lcSensorData.x.length > 0 && lcSensorData.x[0] < windowStart) {
-                lcSensorData.x.shift();
-                lcSensorData.y.forEach(arr => arr.shift());
+            if (isAnalysisMode) {
+                // In analysis mode: all data is already loaded, just update the window
+                // Update the x-axis range to show window around current playback position
+                Plotly.relayout('lc-agg-plot', {
+                    'xaxis.range': [windowStart, windowEnd]
+                });
+                
+                // Update stats with current data point
+                if (typeof window.updateAllLCStats === 'function') {
+                    window.updateAllLCStats(currentTime, newLCValues);
+                }
+            } else {
+                // Live mode: original behavior
+                lcSensorData.x.push(currentTime);
+                newLCValues.forEach((value, i) => { lcSensorData.y[i].push(value); });
+
+                while (lcSensorData.x.length > 0 && lcSensorData.x[0] < windowStart) {
+                    lcSensorData.x.shift();
+                    lcSensorData.y.forEach(arr => arr.shift());
+                }
             }
 
             // let newShapes = [];
@@ -104,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Update yaxis with tickvals
     layout.yaxis.tickvals = generateTickVals(overallMinY, overallMaxY);
-    layout.yaxis.ticktext = layout.yaxis.tickvals.map(String);
+    layout.yaxis.ticktext = layout.yaxis.tickvals.map(t => Math.round(t).toString());
     Plotly.relayout(plotDiv, layout); // Apply new tick PgetNextToken
 
     // setInterval(fetchDataAndUpdateCharts, UPDATE_INTERVAL); // Removed

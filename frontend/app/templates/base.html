@@ -11,14 +11,68 @@
 <body>
     <header>
         <div class="header-content">
-            <h1 class="site-title">
-                <span class="blast-text">BLAST</span> | <span class="page-name">{% block header_title %}Big Launch Analysis & Stats Terminal{% endblock %}</span>
-            </h1>
-            {% if request.endpoint != 'main.index' %}
-            <nav class="page-nav">
-                <a href="{{ url_for('main.index') }}" class="nav-link">← Back to Dashboard</a>
-            </nav>
-            {% endif %}
+            <div class="header-left">
+                <h1 class="site-title">
+                    <a href="{{ url_for('main.index') }}" class="blast-link"><span class="blast-text">BLAST</span></a> | <span class="page-name">{% block header_title %}Big Launch Analysis & Stats Terminal{% endblock %}</span>
+                </h1>
+            </div>
+            <div class="header-right">
+                <div class="mode-selector">
+                    <button id="mode-live" class="mode-btn active">Live</button>
+                    <button id="mode-analysis" class="mode-btn">Analysis</button>
+                </div>
+                <div id="analysis-controls" class="analysis-controls" style="display: none;">
+                    <div class="analysis-controls-row">
+                        <div class="run-selector">
+                            <label for="run-select">Run:</label>
+                            <select id="run-select">
+                                <option value="">Select a run...</option>
+                            </select>
+                            <button id="load-run-btn" class="btn-primary">Load</button>
+                        </div>
+                        <div class="playback-buttons">
+                            <button id="playback-rewind" class="btn-icon" title="Rewind 10s (←)">◀◀</button>
+                            <button id="playback-step-back" class="btn-icon" title="Step back 1s">◀</button>
+                            <button id="playback-play" class="btn-icon btn-play" title="Play (Space)">▶</button>
+                            <button id="playback-pause" class="btn-icon btn-pause" title="Pause (Space)" style="display: none;">⏸</button>
+                            <button id="playback-step-forward" class="btn-icon" title="Step forward 1s">▶</button>
+                            <button id="playback-forward" class="btn-icon" title="Forward 10s (→)">▶▶</button>
+                        </div>
+                        <div class="speed-controls">
+                            <label for="playback-speed">Speed:</label>
+                            <select id="playback-speed" class="speed-select">
+                                <option value="0.25">0.25x</option>
+                                <option value="0.5">0.5x</option>
+                                <option value="1.0" selected>1x</option>
+                                <option value="2.0">2x</option>
+                                <option value="4.0">4x</option>
+                                <option value="8.0">8x</option>
+                            </select>
+                        </div>
+                        <div class="window-size-controls">
+                            <label for="plot-window-size">Window:</label>
+                            <select id="plot-window-size" class="window-size-select">
+                                <option value="15">15s</option>
+                                <option value="30" selected>30s</option>
+                                <option value="60">60s</option>
+                                <option value="180">3 min</option>
+                                <option value="600">10 min</option>
+                                <option value="1200">20 min</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="analysis-controls-row">
+                        <div class="time-controls">
+                            <input type="text" id="playback-time-input" class="time-input" placeholder="00:00:00" title="Jump to time (MM:SS or HH:MM:SS)">
+                            <span class="time-separator">/</span>
+                            <span id="playback-time-total" class="time-display">00:00:00</span>
+                        </div>
+                        <div class="seek-container">
+                            <input type="range" id="playback-seek" min="0" max="100" value="0" step="1" title="Seek through timeline">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
     
@@ -28,5 +82,7 @@
     
     <!-- Browser monitoring script -->
     <script src="{{ url_for('static', filename='js/browser_monitor.js') }}"></script>
+    <!-- Analysis mode controller -->
+    <script src="{{ url_for('static', filename='js/analysis_mode.js') }}"></script>
 </body>
 </html>

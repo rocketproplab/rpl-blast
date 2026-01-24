@@ -1,8 +1,88 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const WINDOW_SIZE = 10; // Size of the time window in seconds
+    // Default window size, can be overridden by global window.plotWindowSize
+    const DEFAULT_WINDOW_SIZE = 30; // Size of the time window in seconds
+    
+    // Get window size from global variable or use default
+    function getWindowSize() {
+        return window.plotWindowSize || DEFAULT_WINDOW_SIZE;
+    }
     const sensorData = {
         x: [],
         y: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => [])
+    };
+    let totalDataDuration = 0; // Store total duration of loaded data
+    
+    // Function to clear plot data (called when switching to analysis mode)
+    window.clearPTPlotData = function() {
+        sensorData.x = [];
+        sensorData.y = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+    };
+    
+    // Function to load all analysis data at once
+    window.loadAllPTAnalysisData = function(allDataEntries) {
+        // Clear existing data
+        sensorData.x = [];
+        sensorData.y = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+        
+        // Load all data points
+        allDataEntries.forEach(entry => {
+            const t = entry.t_seconds || 0;
+            const adjusted = entry.adjusted || {};
+            const ptValues = adjusted.pt || [];
+            
+            sensorData.x.push(t);
+            ptValues.forEach((value, i) => {
+                if (i < sensorData.y.length) {
+                    sensorData.y[i].push(value);
+                }
+            });
+        });
+        
+        // Store total duration
+        if (sensorData.x.length > 0) {
+            totalDataDuration = sensorData.x[sensorData.x.length - 1];
+        }
+        
+        // Create zone shapes that span the full data range
+        let newShapes = [];
+        if (Config.PRESSURE_TRANSDUCERS.length > 0 && totalDataDuration > 0) {
+            const firstPTConfig = Config.PRESSURE_TRANSDUCERS[0];
+            newShapes = [
+                // Green Zone - spans full duration
+                { type: 'rect', x0: 0, x1: totalDataDuration, 
+                  y0: firstPTConfig.min_value, y1: firstPTConfig.warning_value, 
+                  fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 }, layer: 'below' },
+                // Orange Zone - spans full duration
+                { type: 'rect', x0: 0, x1: totalDataDuration, 
+                  y0: firstPTConfig.warning_value, y1: firstPTConfig.danger_value, 
+                  fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 }, layer: 'below' },
+                // Red Zone - spans full duration
+                { type: 'rect', x0: 0, x1: totalDataDuration, 
+                  y0: firstPTConfig.danger_value, y1: firstPTConfig.max_value, 
+                  fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }, layer: 'below' }
+            ];
+        }
+        
+        // Update plot with all data and zone shapes
+        const updateData = {
+            x: sensorData.y.map(() => sensorData.x),
+            y: sensorData.y
+        };
+        
+        Plotly.update('pt-agg-plot', updateData, {
+            shapes: newShapes
+        });
+    };
+    
+    // Function to update plot window based on playback position
+    window.updatePTPlotWindow = function(currentPosition) {
+        const WINDOW_SIZE = getWindowSize();
+        const windowStart = Math.max(0, currentPosition - WINDOW_SIZE);
+        const windowEnd = currentPosition;
+        
+        Plotly.relayout('pt-agg-plot', {
+            'xaxis.range': [windowStart, windowEnd]
+        });
     };
 
     // Get container dimensions
@@ -59,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
             gridcolor: '#f0f0f0',
             zeroline: true,
             zerolinecolor: '#f0f0f0',
-            range: [0, WINDOW_SIZE] // Initialize with window size
+            range: [0, getWindowSize()] // Initialize with window size
         },
         yaxis: {
             ...PT_PLOT_CONFIG.axis,
@@ -73,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
             zerolinecolor: '#f0f0f0',
             range: [overallMinY, overallMaxCfg], // Initialize; will be updated reactively
             tickvals: generateTickVals(overallMinY, overallMaxCfg),
-            ticktext: generateTickVals(overallMinY, overallMaxCfg).map(String)
+            ticktext: generateTickVals(overallMinY, overallMaxCfg).map(t => Math.round(t).toString())
         },
         shapes: [] // Will be populated with zone rectangles
     };
@@ -98,9 +178,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const startTime = Date.now();
+    let updateChartInterval = null;
 
     function updateChart() {
+        // Skip if in analysis mode (get_data.js handles updates in analysis mode)
+        if (window.analysisController && window.analysisController.currentMode === 'analysis') {
+            return;
+        }
+        
         const currentTime = (Date.now() - startTime) / 1000;
+        const WINDOW_SIZE = getWindowSize();
         const windowStart = Math.max(0, currentTime - WINDOW_SIZE);
         const windowEnd = currentTime;
 
@@ -159,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         'xaxis.range': [windowStart, windowEnd],
                         'yaxis.range': [overallMinY, dynUpper],
                         'yaxis.tickvals': generateTickVals(overallMinY, dynUpper),
-                        'yaxis.ticktext': generateTickVals(overallMinY, dynUpper).map(String)
+                        'yaxis.ticktext': generateTickVals(overallMinY, dynUpper).map(t => Math.round(t).toString())
                     });
 
                     // Now, call the function in pt_line.js to update subplots with the SAME data
@@ -176,45 +263,64 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => console.error('Error fetching data:', error));
     }
 
-    // Update chart every 100ms (10 Hz)
-    setInterval(updateChart, 100);
+    // Update chart every 100ms (10 Hz) - only in live mode
+    updateChartInterval = setInterval(updateChart, 100);
 
     // Global function to handle external data updates from get_data.js
     window.updatePTPlotsAndStats = function(currentTime, ptDataValues) {
+        const isAnalysisMode = window.analysisController && window.analysisController.currentMode === 'analysis';
         
-        // Add new data point
-        sensorData.x.push(currentTime);
-        
-        // Limit to window size
-        const windowStart = Math.max(0, currentTime - WINDOW_SIZE);
-        
-        // Filter data to window
-        let startIndex = 0;
-        while (startIndex < sensorData.x.length && sensorData.x[startIndex] < windowStart) {
-            startIndex++;
-        }
-        
-        if (startIndex > 0) {
-            sensorData.x = sensorData.x.slice(startIndex);
-            sensorData.y = sensorData.y.map(yData => yData.slice(startIndex));
-        }
-        
-        // Add new PT values
-        ptDataValues.forEach((value, i) => {
-            if (i < sensorData.y.length) {
-                sensorData.y[i].push(value);
+        if (isAnalysisMode) {
+            // In analysis mode: all data is already loaded, just update the window
+            // Update the x-axis range to show window around current playback position
+            const WINDOW_SIZE = getWindowSize();
+            const windowStart = Math.max(0, currentTime - WINDOW_SIZE);
+            const windowEnd = currentTime;
+            
+            Plotly.relayout('pt-agg-plot', {
+                'xaxis.range': [windowStart, windowEnd]
+            });
+            
+            // Update stats with current data point
+            if (typeof window.updateAllStats === 'function') {
+                window.updateAllStats(currentTime, ptDataValues);
             }
-        });
-        
-        // Update the plot
-        const updateData = {
-            x: sensorData.y.map(() => sensorData.x),
-            y: sensorData.y.map(yData => yData)
-        };
-        
-        Plotly.update('pt-agg-plot', updateData, {
-            'xaxis.range': [windowStart, currentTime]
-        });
+        } else {
+            // Live mode: original behavior - accumulate data continuously
+            sensorData.x.push(currentTime);
+            
+            // Limit to window size
+            const WINDOW_SIZE = getWindowSize();
+            const windowStart = Math.max(0, currentTime - WINDOW_SIZE);
+            
+            // Filter data to window
+            let startIndex = 0;
+            while (startIndex < sensorData.x.length && sensorData.x[startIndex] < windowStart) {
+                startIndex++;
+            }
+            
+            if (startIndex > 0) {
+                sensorData.x = sensorData.x.slice(startIndex);
+                sensorData.y = sensorData.y.map(yData => yData.slice(startIndex));
+            }
+            
+            // Add new PT values
+            ptDataValues.forEach((value, i) => {
+                if (i < sensorData.y.length) {
+                    sensorData.y[i].push(value);
+                }
+            });
+            
+            // Update the plot
+            const updateData = {
+                x: sensorData.y.map(() => sensorData.x),
+                y: sensorData.y.map(yData => yData)
+            };
+            
+            Plotly.update('pt-agg-plot', updateData, {
+                'xaxis.range': [windowStart, currentTime]
+            });
+        }
         
         // Update subplots and stats
         if (typeof window.updateAllSubPlots === 'function') {

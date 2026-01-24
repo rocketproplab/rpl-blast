@@ -1,5 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const WINDOW_SIZE = 10; // Size of the time window in seconds
+    // Default window size, can be overridden by global window.plotWindowSize
+    const DEFAULT_WINDOW_SIZE = 30; // Size of the time window in seconds
+    
+    // Get window size from global variable or use default
+    function getWindowSize() {
+        return window.plotWindowSize || DEFAULT_WINDOW_SIZE;
+    }
     const ROLLING_AVG_WINDOW_SIZE = 3; // Size of the rolling average window in seconds
     // Dynamic Y upper bound behavior
     const YPAD_RATIO = 0.10;        // 10% of current max
@@ -9,6 +15,117 @@ document.addEventListener('DOMContentLoaded', function() {
         y: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []),
         y_avg: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []), // For rolling average
         history: Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []) // For calculating rolling average
+    };
+    let totalDataDuration = 0; // Store total duration of loaded data
+    
+    // Function to clear plot data (called when switching to analysis mode)
+    window.clearPTSubplotData = function() {
+        sensorData.x = [];
+        sensorData.y = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+        sensorData.y_avg = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+        sensorData.history = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+    };
+    
+    // Function to load all analysis data at once
+    window.loadAllPTSubplotAnalysisData = function(allDataEntries) {
+        // Clear existing data
+        sensorData.x = [];
+        sensorData.y = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+        sensorData.y_avg = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+        sensorData.history = Array(Config.NUM_PRESSURE_TRANSDUCERS).fill().map(() => []);
+        
+        // Load all data points and calculate rolling averages
+        allDataEntries.forEach(entry => {
+            const t = entry.t_seconds || 0;
+            const adjusted = entry.adjusted || {};
+            const ptValues = adjusted.pt || [];
+            
+            sensorData.x.push(t);
+            ptValues.forEach((value, i) => {
+                if (i < sensorData.y.length) {
+                    sensorData.y[i].push(value);
+                    
+                    // Update history for rolling average
+                    sensorData.history[i].push({ time: t, value: value });
+                    // Trim history to ROLLING_AVG_WINDOW_SIZE
+                    while (sensorData.history[i].length > 0 && sensorData.history[i][0].time < t - ROLLING_AVG_WINDOW_SIZE) {
+                        sensorData.history[i].shift();
+                    }
+                    
+                    // Calculate rolling average
+                    if (sensorData.history[i].length > 0) {
+                        const sum = sensorData.history[i].reduce((acc, point) => acc + point.value, 0);
+                        sensorData.y_avg[i].push(sum / sensorData.history[i].length);
+                    } else {
+                        sensorData.y_avg[i].push(null);
+                    }
+                }
+            });
+        });
+        
+        // Store total duration
+        if (sensorData.x.length > 0) {
+            totalDataDuration = sensorData.x[sensorData.x.length - 1];
+        }
+        
+        // Create zone shapes that span the full data range for each subplot
+        const newShapes = [];
+        if (totalDataDuration > 0) {
+            for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+                const ptConfig = Config.PRESSURE_TRANSDUCERS[i];
+                const currentXAxisRefZone = i === 0 ? 'x' : `x${i + 1}`;
+                const currentYAxisRefZone = i === 0 ? 'y' : `y${i + 1}`;
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: 0, x1: totalDataDuration,
+                    y0: ptConfig.min_value, y1: ptConfig.warning_value,
+                    fillcolor: 'rgba(0, 255, 0, 0.2)', line: { width: 0 }, layer: 'below' });
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: 0, x1: totalDataDuration,
+                    y0: ptConfig.warning_value, y1: ptConfig.danger_value,
+                    fillcolor: 'rgba(255, 165, 0, 0.2)', line: { width: 0 }, layer: 'below' });
+                newShapes.push({ type: 'rect', xref: currentXAxisRefZone, yref: currentYAxisRefZone,
+                    x0: 0, x1: totalDataDuration,
+                    y0: ptConfig.danger_value, y1: ptConfig.max_value,
+                    fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }, layer: 'below' });
+            }
+        }
+        
+        // Update plot with all data (both raw and average traces)
+        const updateData = {
+            x: Array(Config.NUM_PRESSURE_TRANSDUCERS * 2).fill().map((_, idx) => {
+                // Even indices are raw data, odd indices are averages
+                return sensorData.x;
+            }),
+            y: []
+        };
+        
+        // Add raw data traces
+        for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+            updateData.y.push(sensorData.y[i]);
+        }
+        // Add average traces
+        for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+            updateData.y.push(sensorData.y_avg[i]);
+        }
+        
+        Plotly.update('pt-subplots', updateData, {
+            shapes: newShapes
+        });
+    };
+    
+    // Function to update plot window based on playback position
+    window.updatePTSubplotWindow = function(currentPosition) {
+        const WINDOW_SIZE = getWindowSize();
+        const windowStart = Math.max(0, currentPosition - WINDOW_SIZE);
+        const windowEnd = currentPosition;
+        
+        const xaxisUpdates = {};
+        for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+            const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
+            xaxisUpdates[axisKey] = [windowStart, windowEnd];
+        }
+        
+        Plotly.relayout('pt-subplots', xaxisUpdates);
     };
     // const gn2Index = Config.PRESSURE_TRANSDUCERS.findIndex(pt => pt.name === 'GN2'); // For logging (commented out)
 
@@ -89,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...PT_PLOT_CONFIG.axis.title,
                 text: i === Config.NUM_PRESSURE_TRANSDUCERS - 1 ? 'Time' : ''
             },
-            range: [0, WINDOW_SIZE]
+            range: [0, getWindowSize()]
         };
         const yAxisNameKey = i === 0 ? 'yaxis' : `yaxis${i + 1}`; 
         layout[yAxisNameKey] = {
@@ -105,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
             linewidth: 2,      // Set y-axis line width
             range: [Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value], // Initial Y-axis range
             tickvals: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15),
-            ticktext: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15).map(String)
+            ticktext: generateNiceTicks(Config.PRESSURE_TRANSDUCERS[i].min_value, Config.PRESSURE_TRANSDUCERS[i].max_value, 15).map(t => Math.round(t).toString())
         };
     }
 
@@ -130,39 +247,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // This function will be called by pt_agg.js
     window.updateAllSubPlots = function(currentTimeFromAgg, ptDataFromAgg) {
+        const isAnalysisMode = window.analysisController && window.analysisController.currentMode === 'analysis';
+        const WINDOW_SIZE = getWindowSize();
         const windowStart = Math.max(0, currentTimeFromAgg - WINDOW_SIZE);
         const windowEnd = currentTimeFromAgg;
 
         if (ptDataFromAgg) {
-            // if (gn2Index !== -1 && ptDataFromAgg.length > gn2Index) { // For logging (commented out)
-            //     const gn2Value = ptDataFromAgg[gn2Index];
-            //     // console.log(`SUB_PLOT (from AGG) GN2 - Time: ${currentTimeFromAgg.toFixed(3)}, Value: ${gn2Value !== undefined ? gn2Value.toFixed(3) : 'N/A'}`);
-            // }
-
-            sensorData.x.push(currentTimeFromAgg);
-            ptDataFromAgg.forEach((value, i) => {
-                sensorData.y[i].push(value);
-
-                // Update history for rolling average
-                sensorData.history[i].push({ time: currentTimeFromAgg, value: value });
-                // Trim history to ROLLING_AVG_WINDOW_SIZE
-                while (sensorData.history[i].length > 0 && sensorData.history[i][0].time < currentTimeFromAgg - ROLLING_AVG_WINDOW_SIZE) {
-                    sensorData.history[i].shift();
+            if (isAnalysisMode) {
+                // In analysis mode: all data is already loaded, just update the window
+                // Update the x-axis range to show window around current playback position
+                const xaxisUpdates = {};
+                for (let i = 0; i < Config.NUM_PRESSURE_TRANSDUCERS; i++) {
+                    const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
+                    xaxisUpdates[axisKey] = [windowStart, windowEnd];
                 }
+                Plotly.relayout('pt-subplots', xaxisUpdates);
+            } else {
+                // Live mode: original behavior
+                sensorData.x.push(currentTimeFromAgg);
+                ptDataFromAgg.forEach((value, i) => {
+                    sensorData.y[i].push(value);
 
-                // Calculate rolling average
-                if (sensorData.history[i].length > 0) {
-                    const sum = sensorData.history[i].reduce((acc, point) => acc + point.value, 0);
-                    sensorData.y_avg[i].push(sum / sensorData.history[i].length);
-                } else {
-                    sensorData.y_avg[i].push(null); // Or undefined, or the value itself if no history
+                    // Update history for rolling average
+                    sensorData.history[i].push({ time: currentTimeFromAgg, value: value });
+                    // Trim history to ROLLING_AVG_WINDOW_SIZE
+                    while (sensorData.history[i].length > 0 && sensorData.history[i][0].time < currentTimeFromAgg - ROLLING_AVG_WINDOW_SIZE) {
+                        sensorData.history[i].shift();
+                    }
+
+                    // Calculate rolling average
+                    if (sensorData.history[i].length > 0) {
+                        const sum = sensorData.history[i].reduce((acc, point) => acc + point.value, 0);
+                        sensorData.y_avg[i].push(sum / sensorData.history[i].length);
+                    } else {
+                        sensorData.y_avg[i].push(null);
+                    }
+                });
+
+                while (sensorData.x.length > 0 && sensorData.x[0] < windowStart) {
+                    sensorData.x.shift();
+                    sensorData.y.forEach(arr => arr.shift());
+                    sensorData.y_avg.forEach(arr => arr.shift());
                 }
-            });
-
-            while (sensorData.x.length > 0 && sensorData.x[0] < windowStart) {
-                sensorData.x.shift();
-                sensorData.y.forEach(arr => arr.shift());
-                sensorData.y_avg.forEach(arr => arr.shift()); // Also shift rolling average data
             }
 
             const newShapes = [];
@@ -194,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const yTickValsKey = i === 0 ? 'yaxis.tickvals' : `yaxis${i + 1}.tickvals`;
                 const yTickTextKey = i === 0 ? 'yaxis.ticktext' : `yaxis${i + 1}.ticktext`;
                 yTicksUpdates[yTickValsKey] = ticks;
-                yTicksUpdates[yTickTextKey] = ticks.map(String);
+                yTicksUpdates[yTickTextKey] = ticks.map(t => Math.round(t).toString());
             }
 
             const updateData = {
@@ -268,3 +394,5 @@ function generateNiceTicks(minV, maxV, maxTicks) {
     // Ensure uniqueness and ordering
     return Array.from(new Set(ticks)).sort((a,b)=>a-b);
 }
+
+
