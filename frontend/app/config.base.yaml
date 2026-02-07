@@ -4,7 +4,7 @@
 data_source: "simulator"  # "serial" or "simulator"
 
 # Serial Configuration
-serial_port: "/dev/cu.usbmodem21301"
+serial_port: "COM6"
 serial_baudrate: 115200
 
 # subpage 1
@@ -84,6 +84,20 @@ subpage2:
     - name: "Cryo Thermocouple (Cold Flow)"
       id: "tc3"
       color: "#D55E00"  # Dark Orange
+      min_value: 0
+      max_value: 1000
+      warning_value: 500
+      danger_value: 800
+    - name: "Cryo Thermocouple (Cold Flow)"
+      id: "tc4"
+      color: "#B8F517"  # Lime Green
+      min_value: 0
+      max_value: 1000
+      warning_value: 500
+      danger_value: 800
+    - name: "Cryo Thermocouple (Cold Flow)"
+      id: "tc5"
+      color: "#A1345F"  # Red
       min_value: 0
       max_value: 1000
       warning_value: 500

@@ -141,8 +141,11 @@ class SerialSource:
 
     def _parse_and_update(self, raw_line: str) -> None:
         try:
+            print(raw_line)
             data = json.loads(raw_line)
-        except Exception:
+            print(data)
+        except Exception as e:
+            print(f"{e}")
             return
         if not isinstance(data, dict) or 'value' not in data:
             return
