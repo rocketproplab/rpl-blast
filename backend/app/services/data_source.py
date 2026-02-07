@@ -65,7 +65,7 @@ class SimulatorSource:
                     )
                 )
         tc = [
-            self._rand_in_range(tcc.get("min_value", 0.0), tcc.get("max_value", 1000.0))
+            self._rand_in_range(2 * tcc.get("min_value", 0.0), tcc.get("max_value", 1000.0))
             for tcc in self.settings.THERMOCOUPLES
         ]
         lc = [

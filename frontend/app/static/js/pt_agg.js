@@ -120,14 +120,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         sensorData.y.forEach(arr => arr.shift());
                     }
 
-                    // Compute dynamic upper bound across all sensors in-window
+                    // Compute dynamic Y range (lower and upper) from all sensors in-window
                     const allVals = sensorData.y.flat().filter(v => Number.isFinite(v));
+                    const currentMin = allVals.length ? Math.min(...allVals) : overallMinY;
                     const currentMax = allVals.length ? Math.max(...allVals) : overallMaxCfg;
-                    const pad = Math.max(5, currentMax * 0.10); // 10% padding or 5 units
-                    const minUpperLimit = overallMaxCfg || 100;  // floor for upper bound
-                    const dynUpper = Math.max(minUpperLimit, currentMax + pad);
+                    const span = Math.max(1, currentMax - currentMin);
+                    const pad = Math.max(5, span * 0.10); // 10% padding or 5 units
+                    const dynLower = currentMin - pad;
+                    const dynUpper = currentMax + pad;
 
-                    // Update shapes for the moving time window using first PT's thresholds and dynamic upper
+                    // Update shapes for the moving time window using first PT's thresholds and dynamic range
                     let newShapes = [];
                     if (Config.PRESSURE_TRANSDUCERS.length > 0) {
                         const firstPTConfig = Config.PRESSURE_TRANSDUCERS[0];
@@ -157,9 +159,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     Plotly.update('pt-agg-plot', updateData, {
                         shapes: newShapes,
                         'xaxis.range': [windowStart, windowEnd],
-                        'yaxis.range': [overallMinY, dynUpper],
-                        'yaxis.tickvals': generateTickVals(overallMinY, dynUpper),
-                        'yaxis.ticktext': generateTickVals(overallMinY, dynUpper).map(String)
+                        'yaxis.range': [dynLower, dynUpper],
+                        'yaxis.tickvals': generateTickVals(dynLower, dynUpper),
+                        'yaxis.ticktext': generateTickVals(dynLower, dynUpper).map(String)
                     });
 
                     // Now, call the function in pt_line.js to update subplots with the SAME data
@@ -206,14 +208,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Update the plot
+        // Dynamic Y range from in-window data (both lower and upper)
+        const allVals = sensorData.y.flat().filter(v => Number.isFinite(v));
+        const currentMin = allVals.length ? Math.min(...allVals) : overallMinY;
+        const currentMax = allVals.length ? Math.max(...allVals) : overallMaxCfg;
+        const span = Math.max(1, currentMax - currentMin);
+        const pad = Math.max(5, span * 0.10);
+        const dynLower = currentMin - pad;
+        const dynUpper = currentMax + pad;
+
         const updateData = {
             x: sensorData.y.map(() => sensorData.x),
             y: sensorData.y.map(yData => yData)
         };
         
         Plotly.update('pt-agg-plot', updateData, {
-            'xaxis.range': [windowStart, currentTime]
+            'xaxis.range': [windowStart, currentTime],
+            'yaxis.range': [dynLower, dynUpper],
+            'yaxis.tickvals': generateTickVals(dynLower, dynUpper),
+            'yaxis.ticktext': generateTickVals(dynLower, dynUpper).map(String)
         });
         
         // Update subplots and stats
@@ -239,5 +252,6 @@ function generateTickVals(axisMin, axisMax) {
     // Ensure axisMin and axisMax are part of the ticks if they are not multiples of 100
     // and fall within the generated tick sequence before being potentially filtered out.
     // The initial push of axisMin and axisMax handles this.
-    return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    const filtered = Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    return Array.from(new Set(filtered.map(t => Math.round(t)))).sort((a, b) => a - b);
 }

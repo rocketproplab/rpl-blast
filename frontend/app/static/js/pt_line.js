@@ -175,22 +175,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
                 xaxisUpdates[axisKey] = [windowStart, windowEnd];
 
-                // Compute dynamic Y upper bound per subplot
+                // Compute dynamic Y range (lower and upper) per subplot from in-window data
                 const ptCfg = Config.PRESSURE_TRANSDUCERS[i];
-                const minY = ptCfg.min_value;
-                // Lower limit (floor) for the upper bound to avoid excessive shrinking
-                const minUpperLimit = (typeof ptCfg.min_upper_limit === 'number') ? ptCfg.min_upper_limit : (ptCfg.max_value ?? 100);
-                // Find current window max for this sensor
                 const arr = sensorData.y[i].filter(v => Number.isFinite(v));
-                const currentMax = arr.length ? Math.max(...arr) : minUpperLimit;
-                const padding = Math.max(YPAD_MIN_ABS, currentMax * YPAD_RATIO);
-                const dynUpper = Math.max(minUpperLimit, currentMax + padding);
+                const currentMin = arr.length ? Math.min(...arr) : ptCfg.min_value;
+                const currentMax = arr.length ? Math.max(...arr) : (ptCfg.max_value ?? 100);
+                const span = Math.max(1, currentMax - currentMin);
+                const padding = Math.max(YPAD_MIN_ABS, span * YPAD_RATIO);
+                const dynLower = currentMin - padding;
+                const dynUpper = currentMax + padding;
                 const yKey = i === 0 ? 'yaxis.range' : `yaxis${i + 1}.range`;
-                yaxisUpdates[yKey] = [minY, dynUpper];
+                yaxisUpdates[yKey] = [dynLower, dynUpper];
                 dynUpperByIndex[i] = dynUpper;
 
                 // Dynamic y ticks
-                const ticks = generateNiceTicks(minY, dynUpper, 15);
+                const ticks = generateNiceTicks(dynLower, dynUpper, 15);
                 const yTickValsKey = i === 0 ? 'yaxis.tickvals' : `yaxis${i + 1}.tickvals`;
                 const yTickTextKey = i === 0 ? 'yaxis.ticktext' : `yaxis${i + 1}.ticktext`;
                 yTicksUpdates[yTickValsKey] = ticks;
@@ -265,6 +264,6 @@ function generateNiceTicks(minV, maxV, maxTicks) {
     }
     if (ticks.length === 0 || ticks[0] > minV) ticks.unshift(minV);
     if (ticks[ticks.length - 1] < maxV) ticks.push(maxV);
-    // Ensure uniqueness and ordering
-    return Array.from(new Set(ticks)).sort((a,b)=>a-b);
+    // Round to integers for clean axis labels, ensure uniqueness and ordering
+    return Array.from(new Set(ticks.map(t => Math.round(t)))).sort((a,b)=>a-b);
 }

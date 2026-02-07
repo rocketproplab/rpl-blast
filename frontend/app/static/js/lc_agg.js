@@ -12,12 +12,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const plotDiv = document.getElementById('lc-agg-plot');
     if (!plotDiv) { console.error('LC Aggregate plot div not found'); return; }
 
-    const traces = Config.LOAD_CELLS.map((lc, index) => ({
-        x: [], y: [],
-        ...PT_PLOT_CONFIG.trace,
-        name: lc.name,
-        line: { ...PT_PLOT_CONFIG.trace.line, color: lc.color }
-    }));
+    const traces = [
+        ...Config.LOAD_CELLS.map((lc, index) => ({
+            x: [], y: [],
+            ...PT_PLOT_CONFIG.trace,
+            name: lc.name,
+            line: { ...PT_PLOT_CONFIG.trace.line, color: lc.color }
+        })),
+        {
+            x: [], y: [],
+            ...PT_PLOT_CONFIG.trace,
+            name: 'Total',
+            line: { ...PT_PLOT_CONFIG.trace.line, color: '#1E293B', width: 2.5 }
+        }
+    ];
 
     let overallMinY = Infinity, overallMaxY = -Infinity;
     Config.LOAD_CELLS.forEach(lc => {
@@ -66,6 +74,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 lcSensorData.y.forEach(arr => arr.shift());
             }
 
+            // Sum of all load cells at each time point
+            const sumY = lcSensorData.x.map((_, t) =>
+                lcSensorData.y.reduce((s, arr) => s + (Number(arr[t]) || 0), 0)
+            );
+
+            // Dynamic Y range (lower and upper) from in-window data, including sum
+            const individualVals = lcSensorData.y.flat().filter(v => Number.isFinite(v));
+            const allVals = [...individualVals, ...sumY.filter(v => Number.isFinite(v))];
+            const currentMin = allVals.length ? Math.min(...allVals) : overallMinY;
+            const currentMax = allVals.length ? Math.max(...allVals) : overallMaxY;
+            const span = Math.max(1, currentMax - currentMin);
+            const pad = Math.max(5, span * 0.10);
+            const dynLower = currentMin - pad;
+            const dynUpper = currentMax + pad;
+
             // let newShapes = [];
             // if (Config.LOAD_CELL_BOUNDARIES) {
             //     newShapes.push({ type: 'rect', xref:'x', yref:'y', x0:windowStart, x1:windowEnd, y0:Config.LOAD_CELL_BOUNDARIES.safe[0], y1:Config.LOAD_CELL_BOUNDARIES.safe[1], fillcolor:'rgba(0,255,0,0.2)', line:{width:0}, layer:'below' });
@@ -73,14 +96,17 @@ document.addEventListener('DOMContentLoaded', function() {
             //     newShapes.push({ type: 'rect', xref:'x', yref:'y', x0:windowStart, x1:windowEnd, y0:Config.LOAD_CELL_BOUNDARIES.danger[0], y1:Config.LOAD_CELL_BOUNDARIES.danger[1], fillcolor:'rgba(255,0,0,0.2)', line:{width:0}, layer:'below' });
             // }
 
-            // Create update data object with proper structure for each trace
+            // Create update data object: one trace per load cell plus one for sum
             const updateData = {
-                x: lcSensorData.y.map(() => lcSensorData.x),  // Reference same x array for all traces
-                y: lcSensorData.y.map(yData => yData)  // Reference each y array directly
+                x: [...lcSensorData.y.map(() => lcSensorData.x), lcSensorData.x],
+                y: [...lcSensorData.y.map(yData => yData), sumY]
             };
             
             Plotly.update(plotDiv, updateData, { 
-                'xaxis.range': [windowStart, windowEnd], 
+                'xaxis.range': [windowStart, windowEnd],
+                'yaxis.range': [dynLower, dynUpper],
+                'yaxis.tickvals': generateTickVals(dynLower, dynUpper),
+                'yaxis.ticktext': generateTickVals(dynLower, dynUpper).map(String)
                 // shapes: newShapes 
             });
 
@@ -100,7 +126,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (current > axisMin) ticks.push(current);
             current += interval;
         }
-        return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+        const filtered = Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+        return Array.from(new Set(filtered.map(t => Math.round(t)))).sort((a, b) => a - b);
     }
     // Update yaxis with tickvals
     layout.yaxis.tickvals = generateTickVals(overallMinY, overallMaxY);

@@ -107,6 +107,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 tcSensorData.y.forEach(arr => arr.shift());
             }
 
+            // Dynamic Y range (lower and upper) from in-window data
+            const allVals = tcSensorData.y.flat().filter(v => Number.isFinite(v));
+            const currentMin = allVals.length ? Math.min(...allVals) : overallMinY;
+            const currentMax = allVals.length ? Math.max(...allVals) : overallMaxY;
+            const span = Math.max(1, currentMax - currentMin);
+            const pad = Math.max(5, span * 0.10);
+            const dynLower = currentMin - pad;
+            const dynUpper = currentMax + pad;
+
             // let newShapes = [];
             // if (Config.TEMPERATURE_BOUNDARIES) {
             //     // Green Zone (Safe)
@@ -140,6 +149,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             Plotly.update(plotDiv, updateData, {
                 'xaxis.range': [windowStart, windowEnd],
+                'yaxis.range': [dynLower, dynUpper],
+                'yaxis.tickvals': generateTickVals(dynLower, dynUpper),
+                'yaxis.ticktext': generateTickVals(dynLower, dynUpper).map(String)
                 // shapes: newShapes
             });
 
@@ -169,5 +181,6 @@ function generateTickVals(axisMin, axisMax) {
         }
         current += 200;
     }
-    return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    const filtered = Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    return Array.from(new Set(filtered.map(t => Math.round(t)))).sort((a, b) => a - b);
 } 

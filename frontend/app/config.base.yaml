@@ -1,10 +1,10 @@
 # BLAST Web and Data Configuration
 
 # Data Source
-data_source: "simulator"  # "serial" or "simulator"
+data_source: "serial"  # "serial" or "simulator"
 
 # Serial Configuration
-serial_port: "/dev/cu.usbmodem21301"
+serial_port: "/dev/cu.usbmodem11301"
 serial_baudrate: 115200
 
 # subpage 1
@@ -67,45 +67,59 @@ subpage2:
   title: "Thermocouples & Load Cells"
   description: "Temperature measurements from thermocouples and load cells"
   thermocouples:
-    - name: "Thermocouple 1"
+    - name: "K_INJ"
       id: "tc1"
-      color: "#CC79A7"  # Pink
+      color: "#2563EB"  # Blue
       min_value: 0
-      max_value: 1000
+      max_value: 350
       warning_value: 500
       danger_value: 800
-    - name: "Thermocouple 2"
+    - name: "T_LOX"
       id: "tc2"
-      color: "#009E73"  # Teal
-      min_value: 0
-      max_value: 1000
+      color: "#EA580C"  # Orange
+      min_value: -200
+      max_value: 50
       warning_value: 500
       danger_value: 800
-    - name: "Cryo Thermocouple (Cold Flow)"
+    - name: "T_LNG"
       id: "tc3"
-      color: "#D55E00"  # Dark Orange
+      color: "#059669"  # Emerald
+      min_value: -200
+      max_value: 50
+      warning_value: 500
+      danger_value: 800
+    - name: "K_LEV"
+      id: "tc4"
+      color: "#7C3AED"  # Violet
       min_value: 0
-      max_value: 1000
+      max_value: 350
+      warning_value: 500
+      danger_value: 800
+    - name: "K_TCA"
+      id: "tc5"
+      color: "#DC2626"  # Red
+      min_value: 0
+      max_value: 350
       warning_value: 500
       danger_value: 800
   load_cells:
-    - name: "Load Cell 1"
+    - name: "LC_STAR"
       id: "lc1"
-      color: "#F0E442"  # Yellow
+      color: "#0EA5E9"  # Sky blue
       min_value: 0
       max_value: 1000
       warning_value: 250
       danger_value: 400
-    - name: "Load Cell 2"
+    - name: "LC_CIRC"
       id: "lc2"
-      color: "#000000"  # Black
+      color: "#F97316"  # Orange
       min_value: 0
       max_value: 1000
       warning_value: 250
       danger_value: 400
-    - name: "Load Cell 3"
+    - name: "LC_TRI"
       id: "lc3"
-      color: "#999999"  # Gray
+      color: "#22C55E"  # Green
       min_value: 0
       max_value: 1000
       warning_value: 250

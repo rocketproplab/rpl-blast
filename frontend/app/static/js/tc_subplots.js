@@ -143,9 +143,27 @@ document.addEventListener('DOMContentLoaded', function() {
             // }
 
             const xaxisUpdates = {};
+            const yaxisUpdates = {};
             for (let i = 0; i < Config.NUM_THERMOCOUPLES; i++) {
                 const axisKey = i === 0 ? 'xaxis.range' : `xaxis${i + 1}.range`;
                 xaxisUpdates[axisKey] = [windowStart, windowEnd];
+
+                // Dynamic Y range (lower and upper) per subplot from in-window data
+                const arr = tcSensorData.y[i].filter(v => Number.isFinite(v));
+                const tcCfg = Config.THERMOCOUPLES[i];
+                const currentMin = arr.length ? Math.min(...arr) : tcCfg.min_value;
+                const currentMax = arr.length ? Math.max(...arr) : tcCfg.max_value;
+                const span = Math.max(1, currentMax - currentMin);
+                const pad = Math.max(5, span * 0.10);
+                const dynLower = currentMin - pad;
+                const dynUpper = currentMax + pad;
+                const yKey = i === 0 ? 'yaxis.range' : `yaxis${i + 1}.range`;
+                const yTickValsKey = i === 0 ? 'yaxis.tickvals' : `yaxis${i + 1}.tickvals`;
+                const yTickTextKey = i === 0 ? 'yaxis.ticktext' : `yaxis${i + 1}.ticktext`;
+                const ticks = generateTickVals(dynLower, dynUpper);
+                yaxisUpdates[yKey] = [dynLower, dynUpper];
+                yaxisUpdates[yTickValsKey] = ticks;
+                yaxisUpdates[yTickTextKey] = ticks.map(String);
             }
             
             const updateData = {
@@ -156,7 +174,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             Plotly.update(plotDiv, updateData, {
                 // shapes: newShapes, // Add if R/Y/G zones are implemented
-                ...xaxisUpdates
+                ...xaxisUpdates,
+                ...yaxisUpdates
             });
         }
     };
@@ -171,5 +190,6 @@ function generateTickVals(axisMin, axisMax) {
         }
         current += 200;
     }
-    return Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    const filtered = Array.from(new Set(ticks)).filter(tick => tick >= axisMin && tick <= axisMax).sort((a, b) => a - b);
+    return Array.from(new Set(filtered.map(t => Math.round(t)))).sort((a, b) => a - b);
 } 
