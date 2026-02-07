@@ -250,8 +250,8 @@ def create_app() -> FastAPI:
                         "value": value_adjusted,
                     })
                     
-                    # Only log data in live mode (analysis data is already logged)
-                    if current_mode == "live":
+                    # Only log when reading from live source; never log replayed analysis data
+                    if current_mode == "live" and current_source is app.state.live_source:
                         # Log data using comprehensive logging system
                         app.state.logger_manager.log_data(ts, raw, adjusted, offsets)
                         app.state.logger_manager.log_data_csv(ts, raw, adjusted, offsets, app.state.settings)
