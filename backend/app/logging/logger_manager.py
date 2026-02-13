@@ -121,9 +121,13 @@ class LoggerManager:
                     [("raw_" + rawKeys.get("id")) for rawKeys in settings.PRESSURE_TRANSDUCERS] +
                     [("raw_" + rawKeys.get("id")) for rawKeys in settings.THERMOCOUPLES] +
                     [("raw_" + rawKeys.get("id")) for rawKeys in settings.LOAD_CELLS] +
+                    [("raw_fcv_actual_" + fcvKeys.get("id")) for fcvKeys in settings.FLOW_CONTROL_VALVES] +
+                    [("raw_fcv_expected_" + fcvKeys.get("id")) for fcvKeys in settings.FLOW_CONTROL_VALVES] +
                     [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.PRESSURE_TRANSDUCERS] +
                     [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.THERMOCOUPLES] +
                     [("adjusted_" + adjustedKeys.get("id")) for adjustedKeys in settings.LOAD_CELLS] +
+                    [("adjusted_fcv_actual_" + fcvKeys.get("id")) for fcvKeys in settings.FLOW_CONTROL_VALVES] +
+                    [("adjusted_fcv_expected_" + fcvKeys.get("id")) for fcvKeys in settings.FLOW_CONTROL_VALVES] +
                     [("offset_" + offsetsKeys) for offsetsKeys in offsets] +
                     ["logged_at"]
                     )
