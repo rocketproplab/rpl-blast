@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import sys
 import time
 import json
 import math
@@ -104,6 +106,9 @@ class SerialSource:
         self._lc = [0.0] * self.settings.NUM_LOAD_CELLS
         self._fcv_actual = [False] * self.settings.NUM_FLOW_CONTROL_VALVES
         self._fcv_expected = [False] * self.settings.NUM_FLOW_CONTROL_VALVES
+        # Throttle NaN warnings per sensor (key -> last log time)
+        self._nan_warn_last: Dict[Tuple[str, int], float] = {}
+        self._nan_warn_interval_s: float = 5.0
 
     def initialize(self) -> None:
         if serial is None:
@@ -139,30 +144,85 @@ class SerialSource:
         except Exception:
             return float(value)
 
+    def _sanitize_sensor_value(
+        self, value: float, sensor_type: str, sensor_id: str, index: int
+    ) -> float:
+        """Replace NaN/Inf with 0 and log to terminal (throttled per sensor)."""
+        if value is not None and math.isfinite(value):
+            return value
+        key = (sensor_type, index)
+        now = time.time()
+        last = self._nan_warn_last.get(key, 0.0)
+        if now - last >= self._nan_warn_interval_s:
+            self._nan_warn_last[key] = now
+            print(
+                f"[Serial] {sensor_type} '{sensor_id}' (index {index}) returned "
+                "non-finite value (NaN/Inf), using 0",
+                file=sys.stderr,
+            )
+        return 0.0
+
+    @staticmethod
+    def _normalize_json_nan(raw_line: str) -> str:
+        """Replace non-standard JSON literals (nan, NaN, inf, -inf) with null so json.loads succeeds."""
+        return re.sub(
+            r'(?<=[,[])\s*(?:nan|NaN|Infinity|-Infinity|inf|-inf)\s*(?=[,\]])',
+            'null',
+            raw_line,
+            flags=re.IGNORECASE,
+        )
+
     def _parse_and_update(self, raw_line: str) -> None:
+        line = self._normalize_json_nan(raw_line)
         try:
-            data = json.loads(raw_line)
+            data = json.loads(line)
         except Exception:
             return
         if not isinstance(data, dict) or 'value' not in data:
             return
         value = data['value']
+        def to_float(v: Any) -> float:
+            if v is None:
+                return math.nan
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return math.nan
+
         # pt
         if 'pt' in value:
             for i, v in enumerate(value['pt']):
                 if i < len(self._pt):
                     name = self.settings.PRESSURE_TRANSDUCERS[i].get('name', 'other')
-                    self._pt[i] = self._convert_pt_voltage_to_psi(float(v), name)
+                    raw_val = to_float(v)
+                    converted = self._convert_pt_voltage_to_psi(raw_val, name) if math.isfinite(raw_val) else raw_val
+                    self._pt[i] = self._sanitize_sensor_value(
+                        converted, 'Pressure transducer', name, i
+                    )
         # tc
         if 'tc' in value:
             for i, v in enumerate(value['tc']):
                 if i < len(self._tc):
-                    self._tc[i] = float(v)
+                    name = (
+                        self.settings.THERMOCOUPLES[i].get('name', f'TC{i}')
+                        if i < len(self.settings.THERMOCOUPLES)
+                        else f'TC{i}'
+                    )
+                    self._tc[i] = self._sanitize_sensor_value(
+                        to_float(v), 'Thermocouple', name, i
+                    )
         # lc
         if 'lc' in value:
             for i, v in enumerate(value['lc']):
                 if i < len(self._lc):
-                    self._lc[i] = float(v)
+                    name = (
+                        self.settings.LOAD_CELLS[i].get('name', f'LC{i}')
+                        if i < len(self.settings.LOAD_CELLS)
+                        else f'LC{i}'
+                    )
+                    self._lc[i] = self._sanitize_sensor_value(
+                        to_float(v), 'Load cell', name, i
+                    )
         # fcv
         if 'fcv' in value:
             for i, v in enumerate(value['fcv']):
