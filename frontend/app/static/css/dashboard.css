@@ -790,7 +790,7 @@ button[onclick*="'right'"] {
     background: #1e1e1e;
     color: #6a9955;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     border: none;
     resize: none;
     outline: none;

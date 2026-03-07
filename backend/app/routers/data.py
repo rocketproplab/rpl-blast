@@ -56,3 +56,21 @@ async def browser_status(request: Request):
         return JSONResponse({"status": "ok", "timestamp": time.time()})
     except Exception:
         return JSONResponse({"status": "ok", "timestamp": time.time()})
+
+
+@router.get("/api/serial/logs")
+async def serial_logs(request: Request, after: int = -1):
+    """Get serial monitor log lines for the Serial Monitor UI.
+
+    Args:
+        after: Return only lines with index > this value.
+               Pass -1 (default) to get all buffered lines.
+
+    Returns:
+        {"lines": [{"index": int, "timestamp": str, "raw": str, "source": str}, ...],
+         "next_index": int}
+    """
+    buffer = getattr(request.app.state, 'serial_monitor_buffer', None)
+    if buffer is None:
+        return JSONResponse({"lines": [], "next_index": 0})
+    return JSONResponse(buffer.get_lines(after))
