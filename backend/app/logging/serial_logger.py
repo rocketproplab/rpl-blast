@@ -5,7 +5,7 @@ BLAST Serial Logger - Serial communication monitoring and logging
 import logging
 import time
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from collections import deque
 
 
@@ -26,6 +26,8 @@ class SerialLogger:
             'failed_writes': 0,
             'connection_attempts': 0,
             'connection_failures': 0,
+            'handshake_attempts' : 0,
+            'handshake_failures' : 0,
             'data_packets_parsed': 0,
             'parse_errors': 0
         }
@@ -34,6 +36,7 @@ class SerialLogger:
         self.recent_activity = deque(maxlen=100)
         self.current_port = None
         self.connection_start_time = None
+        self.handshake_recieved = None
     
     def log_connection_attempt(self, port: str, baudrate: int):
         """Log serial connection attempt"""
@@ -95,7 +98,66 @@ class SerialLogger:
             'baudrate': baudrate,
             'error': error
         })
-    
+
+    def log_handshake_received(self, port: str, baudrate: int):
+        """Log Handshake recieved"""
+        self.handshake_recieved = time.time()
+        
+        self.logger_manager.log_serial(
+            direction='handshake_recieved',
+            data=f"Successfully recieved handshake from {port} at {baudrate} baud",
+            port=port,
+            success=True
+        )
+        
+        self.logger.info(f"Handshake recieved: {port}@{baudrate}")
+        
+        self.recent_activity.append({
+            'timestamp': time.time(),
+            'action': 'handshake_received',
+            'port': port,
+            'baudrate': baudrate
+        })
+
+    def log_handshake_attempt(self, port: str, baudrate: int, attempts: int, sent: bool = True):
+        """Log Handshake attempt"""
+        self.current_port = port
+        self.stats['handshake_attempts'] += 1
+        
+        self.logger_manager.log_serial(
+            direction='handshake',
+            data=f"Attempting handshake send to {port} at {baudrate} baud",
+            port=port,
+            success=sent
+        )
+        
+        self.recent_activity.append({
+            'timestamp': time.time(),
+            'action': 'handshake_attempt',
+            'port': port,
+            'baudrate': baudrate
+        })
+
+    def log_handshake_failed(self, port:str, baudrate: int):
+        """Log failed handshake connection"""
+        self.stats['handshake_failures'] += 1
+        
+        self.logger_manager.log_serial(
+            direction='handshake',
+            data=f"Failed to complete handshake with {port} at {baudrate} baud",
+            port=port,
+            success=False,
+        )
+        
+        self.logger.error(f"Handshake failed: {port}@{baudrate}")
+        
+        self.recent_activity.append({
+            'timestamp': time.time(),
+            'action': 'handshake_failure',
+            'port': port,
+            'baudrate': baudrate,
+        })
+
     def log_data_read(self, raw_data: str, port: str, success: bool = True, error: Optional[str] = None):
         """Log data read from serial port"""
         if success:

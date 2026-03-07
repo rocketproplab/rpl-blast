@@ -58,8 +58,8 @@ class SimulatorSource:
 
         # FCVs are not in the packet, filling with 0s to satisfy frontend contract
         num_fcv = self.settings.NUM_FLOW_CONTROL_VALVES
-        fcv_actual = [0.0] * num_fcv
-        fcv_expected = [0.0] * num_fcv
+        fcv_actual = [False] * num_fcv
+        fcv_expected = [False] * num_fcv
 
         value = {
             "pt": pt_values,
@@ -95,33 +95,41 @@ class SerialSource:
         self._last_pt = [0.0] * 7
         self._last_lc = [0.0] * 3
         self._last_tc = [0.0] * 5
-        self._last_fcv_actual = [0.0] * self.settings.NUM_FLOW_CONTROL_VALVES
-        self._last_fcv_expected = [0.0] * self.settings.NUM_FLOW_CONTROL_VALVES
+        self._last_fcv_actual = [False] * self.settings.NUM_FLOW_CONTROL_VALVES
+        self._last_fcv_expected = [False] * self.settings.NUM_FLOW_CONTROL_VALVES
 
     def initialize(self) -> None:
         if serial is None:
             raise RuntimeError("pyserial not installed.")
+        
+                # Get serial logger if available
+        self._serial_logger = getattr(self.settings, '_serial_logger', None)
+        
+        if self._serial_logger:
+            self._serial_logger.log_connection_attempt(self._port, self._baud)
             
         try:
             # Opening port typically resets Arduino (DTR toggle)
             self._ser = serial.Serial(port=self._port, baudrate=self._baud, timeout=1.0)
-            logger.info(f"Opened serial port {self._port} for handshake.")
+            if self._serial_logger:
+                self._serial_logger.log_connection_success(self._port, self._baud)
             
             # --- HANDSHAKE PROTOCOL ---
+
             self._perform_handshake()
             
             # Switch to non-blocking or short timeout for data loop
             self._ser.timeout = 0.01
 
-        except Exception as e:
-            logger.error(f"Failed to initialize Serial Source: {e}")
-            raise RuntimeError(f"Serial Init Error: {e}")
+        except Exception as e:  # pragma: no cover
+            if self._serial_logger:
+                self._serial_logger.log_connection_failure(self._port, self._baud, str(e))
+            raise RuntimeError(f"Failed to open serial port {self._port}: {e}")
 
     def _perform_handshake(self) -> None:
         """
         Waits for 'HANDSHAKE_INIT' from Arduino, then sends 'HANDSHAKE_ACK'.
         """
-        logger.info("Waiting for HANDSHAKE_INIT...")
         max_retries = 50 # 50 seconds roughly if timeout is 1s
         
         for i in range(max_retries):
@@ -132,18 +140,18 @@ class SerialSource:
                 continue
 
             if line == "HANDSHAKE_INIT":
-                logger.info("Received HANDSHAKE_INIT. Sending ACK...")
-                print("Received HANDSHAKE_INIT. Sending ACK...")
+                self._serial_logger.log_handshake_received(self._port,self._baud)
                 time.sleep(0.1) # Brief pause to ensure Arduino is listening
                 self._ser.write(b"HANDSHAKE_ACK\n")
                 self._ser.flush()
-                logger.info("Handshake Complete. Ready for data.")
-                print("Handshake Complete. Ready for data.")
+                #Handshake achnoledge sent
+                self._serial_logger.log_handshake_attempt(self._port, self._baud, i, True)
                 return
             
-            if i % 5 == 0:
-                logger.debug("Still waiting for handshake...")
-        
+            #Handshake not recieved yet
+            self._serial_logger.log_handshake_attempt(self._port, self._baud, i, False)
+
+        self._serial_logger.log_handshake_failed(self._port, self._baud)
         raise TimeoutError("Timed out waiting for HANDSHAKE_INIT from Arduino.")
 
     def read_once(self) -> Tuple[Dict[str, Union[List[float], List[bool]]], float]:
@@ -155,15 +163,22 @@ class SerialSource:
             if self._ser.in_waiting > 0:
                 raw_chunk = self._ser.read(self._ser.in_waiting)  
 
-                #print(raw_chunk)              
+                if (raw_chunk):
+                    self._serial_logger.log_data_read(raw_chunk, self._port,True)
+                else:
+                    self._serial_logger.log_data_read(raw_chunk, self._port, False)
+
+
+
                 # Feed to parser
                 packets = self._parser.feed(raw_chunk)
                 
                 if(len(packets) == 0):
-                    print("Empty/missed packet")
-                    logger.warning("Missed packet")
+                    self._serial_logger.log_data_parse(raw_chunk, packets,True)
                 else:
-                    print(packets)
+                    self._serial_logger.log_data_parse(raw_chunk, packets,False)
+
+                    
                 # Process all valid packets, keeping the latest one
                 for pkt in packets:
                     self._last_pt = pkt['pt']
@@ -174,9 +189,10 @@ class SerialSource:
             if hasattr(self.settings, '_freeze_detector'):
                 self.settings._freeze_detector.heartbeat('serial_communication')
                 
-        except Exception as e:
-            logger.error(f"Serial Read Error: {e}")
-            # Don't crash, return last known state
+        except Exception as e:  # pragma: no cover
+            if self._serial_logger:
+                self._serial_logger.log_data_read('', self._port, False, str(e))
+            # Keep last values on transient errors
             pass
             
         now = time.time()
