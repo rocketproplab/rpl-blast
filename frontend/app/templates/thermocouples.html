@@ -5,16 +5,16 @@
 
 {% block head %}
 <script>
-const Config = {
-    THERMOCOUPLES: {{ config.THERMOCOUPLES | tojson }},
-    NUM_THERMOCOUPLES: {{ config.NUM_THERMOCOUPLES }},
-    TEMPERATURE_BOUNDARIES: {{ config.TEMPERATURE_BOUNDARIES | tojson }},
-    LOAD_CELLS: {{ config.LOAD_CELLS | tojson }},
-    NUM_LOAD_CELLS: {{ config.NUM_LOAD_CELLS }},
-    LOAD_CELL_BOUNDARIES: {{ config.LOAD_CELL_BOUNDARIES | tojson }}
-};
+    const Config = {
+        THERMOCOUPLES: {{ config.THERMOCOUPLES | tojson }},
+        NUM_THERMOCOUPLES: {{ config.NUM_THERMOCOUPLES }},
+        TEMPERATURE_BOUNDARIES: {{ config.TEMPERATURE_BOUNDARIES | tojson }},
+        LOAD_CELLS: {{ config.LOAD_CELLS | tojson }},
+        NUM_LOAD_CELLS: {{ config.NUM_LOAD_CELLS }},
+        LOAD_CELL_BOUNDARIES: {{ config.LOAD_CELL_BOUNDARIES | tojson }}
+    };
 </script>
-<script src="{{ url_for('static', filename='js/pt_config.js') }}"></script> 
+<script src="{{ url_for('static', filename='js/pt_config.js') }}"></script>
 <script src="{{ url_for('static', filename='js/tc_subplots.js') }}"></script>
 <script src="{{ url_for('static', filename='js/tc_agg.js') }}"></script>
 <script src="{{ url_for('static', filename='js/tc_stats.js') }}"></script>
@@ -29,12 +29,12 @@ const Config = {
 <div class="container">
     <div class="tc-lc-grid">
         <div class="tc-lc-column" id="tc-column">
-            <div class="tc-lc-row-top plot" id="tc-charts-grid"> 
-                <div class="pt-line-container" id="tc-subplots-container"> 
-                    <div id="tc-subplots-plot"></div> 
+            <div class="tc-lc-row-top plot" id="tc-charts-grid">
+                <div class="pt-line-container" id="tc-subplots-container">
+                    <div id="tc-subplots-plot"></div>
                 </div>
-                <div class="pt-agg-container" id="tc-agg-container"> 
-                    <div id="tc-agg-plot"></div> 
+                <div class="pt-agg-container" id="tc-agg-container">
+                    <div id="tc-agg-plot"></div>
                 </div>
             </div>
             <div class="tc-lc-row-bottom plot" id="tc-stats-container">
@@ -56,7 +56,7 @@ const Config = {
         <div class="tc-lc-column" id="lc-column">
             <div class="tc-lc-row-top plot" id="lc-charts-grid">
                 <div class="pt-agg-container" id="lc-agg-container">
-                    <div id="lc-agg-plot"></div> 
+                    <div id="lc-agg-plot"></div>
                 </div>
                 <div class="pt-line-container" id="lc-subplots-container">
                     <div id="lc-subplots-plot"></div>
@@ -79,15 +79,16 @@ const Config = {
             </div>
         </div>
     </div>
+    <div id="serial-monitor-slot"></div>
     <div id="calibration-tc-lc"></div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    if (window.Calibration && typeof window.Calibration.initTCLC === 'function') {
-        window.Calibration.initTCLC();
-    }
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.Calibration && typeof window.Calibration.initTCLC === 'function') {
+            window.Calibration.initTCLC();
+        }
+    });
 </script>
 {% endblock %}
