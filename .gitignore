@@ -5,11 +5,14 @@ __pycache__/
 htmlcov/
 .mamba/
 .venv/
+.vscode/
 
 # vibe
 .kiro/
 CLAUDE.md
 .claude/
+.cursor/
+
 
 # logs
 logs/
