@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,25 +9,32 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% block head %}{% endblock %}
 </head>
+
 <body>
     <header>
         <div class="header-content">
             <h1 class="site-title">
-                <span class="blast-text">BLAST</span> | <span class="page-name">{% block header_title %}Big Launch Analysis & Stats Terminal{% endblock %}</span>
+                <span class="blast-text">BLAST</span> | <span class="page-name">{% block header_title %}Big Launch
+                    Analysis & Stats Terminal{% endblock %}</span>
             </h1>
-            {% if request.endpoint != 'main.index' %}
-            <nav class="page-nav">
-                <a href="{{ url_for('main.index') }}" class="nav-link">← Back to Dashboard</a>
-            </nav>
-            {% endif %}
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="serial-btn" class="serial-btn">Serial Monitor</button>
+                {% if request.endpoint != 'main.index' %}
+                <nav class="page-nav">
+                    <a href="{{ url_for('main.index') }}" class="nav-link">← Back to Dashboard</a>
+                </nav>
+                {% endif %}
+            </div>
         </div>
     </header>
-    
+
     <main>
         {% block content %}{% endblock %}
     </main>
-    
+
     <!-- Browser monitoring script -->
+    <script src="{{ url_for('static', filename='js/serial_monitor.js') }}"></script>
     <script src="{{ url_for('static', filename='js/browser_monitor.js') }}"></script>
 </body>
+
 </html>

@@ -25,6 +25,7 @@ from .routers import data as data_router
 from .routers import pages as pages_router
 from .routers import calibration as calibration_router
 from .services.data_source import SimulatorSource, SerialSource
+from .services.serial_monitor import SerialMonitorBuffer
 from .services.calibration import CalibrationService, CalibrationStore
 from .services.reading_cache import LatestReadingCache
 from .version import get_version
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
     # Shared state
     app.state.settings = settings
     app.state.cache = LatestReadingCache()
+    app.state.serial_monitor_buffer = SerialMonitorBuffer(maxlen=1000)
     app.state.templates = Jinja2Templates(directory=str(FRONTEND_TEMPLATES))
     app.state.reader_task: Optional[asyncio.Task] = None
     app.state.healthy: bool = True
@@ -139,6 +141,7 @@ def create_app() -> FastAPI:
         force_simulator = _os.environ.get('FORCE_SIMULATOR_MODE', '').lower() in ('1', 'true', 'yes')
         
         if force_simulator or settings.DATA_SOURCE == "simulator":
+            settings._serial_monitor_buffer = app.state.serial_monitor_buffer
             source = SimulatorSource(settings)
             data_source_name = 'simulator'
             reason = 'CI environment override' if force_simulator else 'startup configuration'
@@ -146,6 +149,7 @@ def create_app() -> FastAPI:
             # Pass logging components to data source
             settings._serial_logger = app.state.serial_logger
             settings._freeze_detector = app.state.freeze_detector
+            settings._serial_monitor_buffer = app.state.serial_monitor_buffer
             source = SerialSource(settings)
             data_source_name = 'serial'
             reason = 'startup configuration'

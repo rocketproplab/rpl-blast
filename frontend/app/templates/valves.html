@@ -5,8 +5,8 @@
 
 {% block head %}
 <script>
-const Config = {
-    FLOW_CONTROL_VALVES: {{ config.FLOW_CONTROL_VALVES | tojson }}
+    const Config = {
+        FLOW_CONTROL_VALVES: {{ config.FLOW_CONTROL_VALVES | tojson }}
 };
 </script>
 <script src="{{ url_for('static', filename='js/valves.js') }}"></script>
@@ -17,33 +17,33 @@ const Config = {
 <div class="container">
     <div class="valve-grid-container">
         {% for i in range(8) %}
-            {% if i == 3 %}
-                <div class="valve-block" id="valve-block-{{ i }}">
-                    <div class="blast-phoenix-card">
-                        <div class="blast-text">BLAST</div>
-                        <div class="phoenix-text">Phoenix</div>
-                    </div>
+        {% if i == 3 %}
+        <div class="valve-block" id="valve-block-{{ i }}">
+            <div class="blast-phoenix-card">
+                <div class="blast-text">BLAST</div>
+                <div class="phoenix-text">Phoenix</div>
+            </div>
+        </div>
+        {% else %}
+        {% set valve_index = i if i < 3 else i - 1 %} {% set valve=config.FLOW_CONTROL_VALVES[valve_index] if
+            valve_index < config.NUM_FLOW_CONTROL_VALVES else none %} <div class="valve-block" id="valve-block-{{ i }}">
+            {% if valve %}
+            <div class="valve-title">{{ valve.name }}</div>
+            <div class="valve-state-container">
+                <div class="state-display actual-state-display">
+                    <span class="valve-state-label">Actual:</span>
+                    <div class="valve-state actual-state off" id="valve-{{ valve.id }}-actual"></div>
                 </div>
-            {% else %}
-                {% set valve_index = i if i < 3 else i - 1 %}
-                {% set valve = config.FLOW_CONTROL_VALVES[valve_index] if valve_index < config.NUM_FLOW_CONTROL_VALVES else none %}
-                <div class="valve-block" id="valve-block-{{ i }}">
-                    {% if valve %}
-                        <div class="valve-title">{{ valve.name }}</div>
-                        <div class="valve-state-container">
-                            <div class="state-display actual-state-display">
-                                <span class="valve-state-label">Actual:</span>
-                                <div class="valve-state actual-state off" id="valve-{{ valve.id }}-actual"></div>
-                            </div>
-                            <div class="state-display expected-state-display">
-                                <span class="valve-state-label">Expected:</span>
-                                <div class="valve-state expected-state off" id="valve-{{ valve.id }}-expected"></div>
-                            </div>
-                        </div>
-                    {% endif %}
+                <div class="state-display expected-state-display">
+                    <span class="valve-state-label">Expected:</span>
+                    <div class="valve-state expected-state off" id="valve-{{ valve.id }}-expected"></div>
                 </div>
+            </div>
             {% endif %}
-        {% endfor %}
     </div>
+    {% endif %}
+    {% endfor %}
+</div>
+<div id="serial-monitor-slot"></div>
 </div>
 {% endblock %}

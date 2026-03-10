@@ -15,8 +15,10 @@
 
 /* Apply Roboto font globally */
 * {
-    font-family: 'Roboto', Arial, sans-serif;  /* Added fallback fonts */
-    box-sizing: border-box; /* Add this to prevent padding/border from affecting element size */
+    font-family: 'Roboto', Arial, sans-serif;
+    /* Added fallback fonts */
+    box-sizing: border-box;
+    /* Add this to prevent padding/border from affecting element size */
 }
 
 body {
@@ -50,15 +52,18 @@ header h1 {
     margin: 0;
     font-size: 1.5rem;
     text-align: left;
-    font-weight: normal;  /* Reset font weight */
+    font-weight: normal;
+    /* Reset font weight */
 }
 
 .blast-text {
-    font-weight: 700;  /* Make BLAST bold */
+    font-weight: 700;
+    /* Make BLAST bold */
 }
 
 .page-name {
-    font-weight: normal;  /* Ensure the page name is not bold */
+    font-weight: normal;
+    /* Ensure the page name is not bold */
 }
 
 .site-title strong {
@@ -67,7 +72,8 @@ header h1 {
 
 main {
     flex: 1;
-    min-height: 0;  /* Important for flex container */
+    min-height: 0;
+    /* Important for flex container */
 }
 
 .container {
@@ -87,11 +93,12 @@ main {
 .plot {
     width: 100%;
     height: 100%;
-    min-height: 0;  /* Important for grid layout */
+    min-height: 0;
+    /* Important for grid layout */
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
 
@@ -109,7 +116,7 @@ main {
     padding: 10px;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .valve-indicators {
@@ -119,7 +126,8 @@ main {
 }
 
 .indicator {
-    height: 80px;  /* Reduced height */
+    height: 80px;
+    /* Reduced height */
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -157,7 +165,7 @@ button:hover {
     background: #0056b3;
 }
 
-button[onclick*="'left'"], 
+button[onclick*="'left'"],
 button[onclick*="'right'"] {
     background: #6c757d;
 }
@@ -178,7 +186,7 @@ button[onclick*="'right'"] {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-decoration: none;
     color: inherit;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -186,7 +194,7 @@ button[onclick*="'right'"] {
 
 .nav-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .nav-card h2 {
@@ -200,7 +208,8 @@ button[onclick*="'right'"] {
 }
 
 .page-nav {
-    margin-left: auto;  /* Push to the right */
+    margin-left: auto;
+    /* Push to the right */
 }
 
 .nav-link {
@@ -219,12 +228,14 @@ button[onclick*="'right'"] {
 .pt-grid {
     display: grid;
     grid-template-columns: 2.5fr 5.5fr 2fr;
-    gap: 10px;  /* Changed from 0px to add gap between columns */
+    gap: 10px;
+    /* Changed from 0px to add gap between columns */
     height: calc(100vh - 80px);
     padding: 10px;
 }
 
-.pt-line-container, .pt-agg-container {
+.pt-line-container,
+.pt-agg-container {
     display: flex;
     flex-direction: column;
     gap: 0px;
@@ -232,31 +243,37 @@ button[onclick*="'right'"] {
     background: white;
     border-radius: 8px;
     border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 0px;
 }
 
 .pt-stat-container {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Add some gap between stat blocks */
-    overflow-y: auto; /* Allow scrolling if content overflows */
+    gap: 10px;
+    /* Add some gap between stat blocks */
+    overflow-y: auto;
+    /* Allow scrolling if content overflows */
     background: white;
     border-radius: 8px;
     border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 10px; /* Add some padding inside the container */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    /* Add some padding inside the container */
 }
 
 .pt-stat-block {
-    background-color: #f9f9f9; /* Light background for each block */
+    background-color: #f9f9f9;
+    /* Light background for each block */
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
     /* flex: 1; Remove this to allow natural height or set a min-height if needed */
-    min-height: 120px; /* Give a minimum height to each block */
-    overflow: hidden; /* Prevent content from spilling out */
+    min-height: 120px;
+    /* Give a minimum height to each block */
+    overflow: hidden;
+    /* Prevent content from spilling out */
 }
 
 .pt-stat-title {
@@ -269,30 +286,36 @@ button[onclick*="'right'"] {
 }
 
 .pt-stat-values {
-    padding: 8px; /* Maintain overall padding */
+    padding: 8px;
+    /* Maintain overall padding */
     font-size: 0.85rem;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    color: black; /* Make all text in this container black by default */
+    color: black;
+    /* Make all text in this container black by default */
     /* justify-content: space-around; Remove this */
     /* We will rely on paragraph margins and container padding */
 }
 
 .pt-stat-values p {
-    margin: 6px 0; /* Slightly increase vertical margin for consistent spacing */
+    margin: 6px 0;
+    /* Slightly increase vertical margin for consistent spacing */
 }
 
 .pt-stat-values p:first-child {
-    margin-top: 0; /* Remove top margin from the first paragraph */
+    margin-top: 0;
+    /* Remove top margin from the first paragraph */
 }
 
 .pt-stat-values p:last-child {
-    margin-bottom: 0; /* Remove bottom margin from the last paragraph */
+    margin-bottom: 0;
+    /* Remove bottom margin from the last paragraph */
 }
 
 .pt-stat-values strong {
-    color: black; /* Ensure strong tags are also explicitly black */
+    color: black;
+    /* Ensure strong tags are also explicitly black */
 }
 
 /* Remove old .pt-stat-chart styles if they are no longer used directly for these blocks */
@@ -311,37 +334,46 @@ button[onclick*="'right'"] {
 #pt-agg-plot {
     width: 100%;
     height: 100%;
-    min-height: 0; /* Allow container to shrink */
+    min-height: 0;
+    /* Allow container to shrink */
 }
 
 /* Thermocouple and Load Cell Page Layout */
 .tc-lc-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 50:50 split for two columns */
+    grid-template-columns: 1fr 1fr;
+    /* 50:50 split for two columns */
     gap: 10px;
-    height: calc(100vh - 80px); /* Was 100%, changed to match pt-grid for consistent viewport usage */
+    height: calc(100vh - 80px);
+    /* Was 100%, changed to match pt-grid for consistent viewport usage */
     padding: 10px;
 }
 
 .tc-lc-column {
     display: grid;
-    grid-template-rows: 8fr 2fr; /* 80:20 split for rows within a column, was 7fr 3fr */
+    grid-template-rows: 8fr 2fr;
+    /* 80:20 split for rows within a column, was 7fr 3fr */
     gap: 10px;
-    min-height: 0; /* Important for nested grids/flex */
+    min-height: 0;
+    /* Important for nested grids/flex */
 }
 
 .tc-lc-row-top,
 .tc-lc-row-bottom {
     /* .plot class already defines background, border, radius, shadow, overflow */
-    min-height: 0; /* Ensure content fits and scrolls if necessary */
-    display: flex; /* To help center content or manage internal layout */
-    flex-direction: column; /* Stack children vertically if needed */
-    /* padding: 10px; */ /* Removed padding to allow content to fill, similar to pt-line-container */
+    min-height: 0;
+    /* Ensure content fits and scrolls if necessary */
+    display: flex;
+    /* To help center content or manage internal layout */
+    flex-direction: column;
+    /* Stack children vertically if needed */
+    /* padding: 10px; */
+    /* Removed padding to allow content to fill, similar to pt-line-container */
 }
 
 /* Ensure plot divs inside these containers also take full space if they are direct children */
-.tc-lc-row-top > div,
-.tc-lc-row-bottom > div {
+.tc-lc-row-top>div,
+.tc-lc-row-bottom>div {
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -350,8 +382,8 @@ button[onclick*="'right'"] {
 /* Styling for placeholder text */
 #tc-chart,
 #lc-chart,
-#tc-stats-container > div,
-#lc-stats-container > div {
+#tc-stats-container>div,
+#lc-stats-container>div {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -362,9 +394,11 @@ button[onclick*="'right'"] {
 /* Grid for TC subplots and aggregate plot */
 #tc-charts-grid {
     display: grid;
-    grid-template-columns: 2.5fr 5.5fr; /* Similar to pt-grid, adjust as needed */
+    grid-template-columns: 2.5fr 5.5fr;
+    /* Similar to pt-grid, adjust as needed */
     gap: 10px;
-    padding: 0; /* The parent .tc-lc-row-top might have padding if needed */
+    padding: 0;
+    /* The parent .tc-lc-row-top might have padding if needed */
     height: 100%;
     width: 100%;
 }
@@ -376,7 +410,8 @@ button[onclick*="'right'"] {
 #tc-agg-plot {
     width: 100%;
     height: 100%;
-    min-height: 0; /* Important for flex/grid children */
+    min-height: 0;
+    /* Important for flex/grid children */
     /* background, border etc. are inherited from .plot or .pt-line-container/.pt-agg-container */
 }
 
@@ -385,25 +420,29 @@ button[onclick*="'right'"] {
 
 /* Thermocouple Stats Layout */
 .tc-stat-grid {
-    display: flex; 
-    align-items: stretch; /* Explicitly set to stretch items (stat blocks) vertically */
+    display: flex;
+    align-items: stretch;
+    /* Explicitly set to stretch items (stat blocks) vertically */
     gap: 10px;
     width: 100%;
     height: 100%;
-    overflow-y: auto; 
+    overflow-y: auto;
 }
 
 .tc-stat-block {
-    background-color: #f9f9f9; 
+    background-color: #f9f9f9;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
-    /* min-height: 0; */ /* Let's test removing this or relying on height: 100% */
-    height: 100%; /* Explicitly set height to fill parent */
-    overflow: hidden; 
-    flex: 1; 
-    min-width: 150px; /* Added to ensure a minimum reasonable width */
+    /* min-height: 0; */
+    /* Let's test removing this or relying on height: 100% */
+    height: 100%;
+    /* Explicitly set height to fill parent */
+    overflow: hidden;
+    flex: 1;
+    min-width: 150px;
+    /* Added to ensure a minimum reasonable width */
 }
 
 /* Title and Values styling can reuse .pt-stat-title and .pt-stat-values for now,
@@ -414,23 +453,27 @@ button[onclick*="'right'"] {
 
 /* Adjust font sizes for the smaller stat blocks if needed */
 .tc-stat-block .pt-stat-title {
-    font-size: 0.8rem; /* Slightly smaller title */
+    font-size: 0.8rem;
+    /* Slightly smaller title */
     padding: 3px 5px;
 }
 
 .tc-stat-block .pt-stat-values {
-    font-size: 0.75rem; /* Slightly smaller text */
+    font-size: 0.75rem;
+    /* Slightly smaller text */
     padding: 6px;
 }
 
 .tc-stat-block .pt-stat-values p {
-    margin: 4px 0; /* Adjust margins for tighter packing */
+    margin: 4px 0;
+    /* Adjust margins for tighter packing */
 }
 
 /* Grid for LC subplots and aggregate plot (similar to tc-charts-grid) */
 #lc-charts-grid {
     display: grid;
-    grid-template-columns: 5.5fr 2.5fr; /* Agg on left (wider), Subplots on right (narrower) - reversed from TC */
+    grid-template-columns: 5.5fr 2.5fr;
+    /* Agg on left (wider), Subplots on right (narrower) - reversed from TC */
     gap: 10px;
     padding: 0;
     height: 100%;
@@ -438,8 +481,10 @@ button[onclick*="'right'"] {
 }
 
 /* Ensure the containers within lc-charts-grid and their plot divs take full space */
-#lc-agg-container, /* For LC aggregate plot */
-#lc-subplots-container, /* For LC subplots */
+#lc-agg-container,
+/* For LC aggregate plot */
+#lc-subplots-container,
+/* For LC subplots */
 #lc-agg-plot,
 #lc-subplots-plot {
     width: 100%;
@@ -449,48 +494,51 @@ button[onclick*="'right'"] {
 
 /* Load Cell Stats Layout (similar to TC stats) */
 .lc-stat-grid {
-    display: flex; 
-    align-items: stretch; 
+    display: flex;
+    align-items: stretch;
     gap: 10px;
     width: 100%;
     height: 100%;
-    overflow-y: auto; 
+    overflow-y: auto;
 }
 
 .lc-stat-block {
-    background-color: #f9f9f9; 
+    background-color: #f9f9f9;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
-    height: 100%; 
-    overflow: hidden; 
-    flex: 1; 
-    min-width: 150px; 
+    height: 100%;
+    overflow: hidden;
+    flex: 1;
+    min-width: 150px;
 }
 
 /* Adjust font sizes for the LC stat blocks if needed (reusing pt-stat-title/values for now) */
 .lc-stat-block .pt-stat-title {
-    font-size: 0.8rem; 
+    font-size: 0.8rem;
     padding: 3px 5px;
 }
 
 .lc-stat-block .pt-stat-values {
-    font-size: 0.75rem; 
+    font-size: 0.75rem;
     padding: 6px;
 }
 
 .lc-stat-block .pt-stat-values p {
-    margin: 4px 0; 
+    margin: 4px 0;
 }
 
 /* Valve Page Layout */
 .valve-grid-container {
     display: grid;
-    grid-template-rows: repeat(2, 1fr);    /* 2 rows */
-    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    grid-template-rows: repeat(2, 1fr);
+    /* 2 rows */
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 columns */
     gap: 10px;
-    height: calc(100vh - 80px); /* Full available height, similar to other pages */
+    height: calc(100vh - 80px);
+    /* Full available height, similar to other pages */
     padding: 10px;
 }
 
@@ -498,67 +546,84 @@ button[onclick*="'right'"] {
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 10px;
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: flex-start; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     font-size: 1rem;
     color: #333;
-    min-height: 0; 
+    min-height: 0;
 }
 
 .valve-title {
     font-weight: bold;
     font-size: 0.9rem;
-    margin-bottom: 8px; /* Reduced margin a bit */
+    margin-bottom: 8px;
+    /* Reduced margin a bit */
     text-align: center;
     width: 100%;
-    flex-shrink: 0; /* Prevent title from shrinking */
+    flex-shrink: 0;
+    /* Prevent title from shrinking */
 }
 
 .valve-state-container {
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     width: 100%;
-    flex-grow: 1; /* Takes up remaining vertical space */
-    justify-content: space-evenly; /* Distribute the two state displays */
-    gap: 8px; 
+    flex-grow: 1;
+    /* Takes up remaining vertical space */
+    justify-content: space-evenly;
+    /* Distribute the two state displays */
+    gap: 8px;
 }
 
-.state-display { /* New class for each label+state unit */
+.state-display {
+    /* New class for each label+state unit */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center label and block horizontally */
-    flex-grow: 1; /* Make each state display take up available space */
+    align-items: center;
+    /* Center label and block horizontally */
+    flex-grow: 1;
+    /* Make each state display take up available space */
     /* border: 1px dashed blue; /* For debugging layout */
-    padding: 5px 0; /* Add some padding */
-    justify-content: center; /* Center label and block vertically within this container */
+    padding: 5px 0;
+    /* Add some padding */
+    justify-content: center;
+    /* Center label and block vertically within this container */
 }
 
 .valve-state-label {
     font-size: 0.8rem;
-    text-align: center; /* Label centered above block */
-    margin-bottom: 5px; /* Space between label and its block */
-    flex-shrink: 0; /* Prevent label from shrinking */
+    text-align: center;
+    /* Label centered above block */
+    margin-bottom: 5px;
+    /* Space between label and its block */
+    flex-shrink: 0;
+    /* Prevent label from shrinking */
 }
 
 .valve-state {
-    width: 85%;  /* Make state block wide */
-    min-height: 60px; /* Increased minimum height */
-    flex-grow: 1; /* Allow block to grow tall within its .state-display parent */
+    width: 85%;
+    /* Make state block wide */
+    min-height: 60px;
+    /* Increased minimum height */
+    flex-grow: 1;
+    /* Allow block to grow tall within its .state-display parent */
     border: 1px solid #ccc;
     border-radius: 4px;
     /* background-color: #eee; /* Default, will be overridden by .on/.off */
 }
 
 .valve-state.on {
-    background-color: #0072B2; /* Blue for ON */
+    background-color: #0072B2;
+    /* Blue for ON */
 }
 
 .valve-state.off {
-    background-color: #E69F00; /* Orange for OFF */
+    background-color: #E69F00;
+    /* Orange for OFF */
 }
 
 /* Style for empty valve blocks if needed, or rely on &nbsp; */
@@ -603,12 +668,13 @@ button[onclick*="'right'"] {
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 10px;
     margin-top: 10px;
 }
 
-.calibration-header { /* title + actions on one line */
+.calibration-header {
+    /* title + actions on one line */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -635,7 +701,8 @@ button[onclick*="'right'"] {
 
 .calibration-row {
     display: grid;
-    grid-template-columns: auto 2fr 1fr 1fr 1fr; /* swatch | name | input | update | zero */
+    grid-template-columns: auto 2fr 1fr 1fr 1fr;
+    /* swatch | name | input | update | zero */
     gap: 8px;
     align-items: center;
 }
@@ -660,6 +727,75 @@ button[onclick*="'right'"] {
     border-radius: 4px;
 }
 
-.calibration-update, .calibration-zero {
+.calibration-update,
+.calibration-zero {
     width: 100%;
+}
+
+/* Serial Monitor Styles */
+.serial-btn {
+    background-color: #d6d6d6;
+    color: #333;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    border: 1px solid #bbb;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.serial-btn:hover {
+    background-color: #c0c0c0;
+}
+
+.serial-pane {
+    width: 100%;
+    height: 250px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.serial-pane-header {
+    background: #2d2d2d;
+    padding: 8px 15px;
+    border-bottom: 1px solid #333;
+    color: #fff;
+}
+
+.serial-pane-header h2 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.serial-pane-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+#serial-console {
+    flex: 1;
+    background: #1e1e1e;
+    color: #6a9955;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.75rem;
+    border: none;
+    resize: none;
+    outline: none;
+    padding: 10px 15px;
+    width: 100%;
+    height: 100%;
+    line-height: 1.4;
 }

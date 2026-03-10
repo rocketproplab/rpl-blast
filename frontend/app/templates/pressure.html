@@ -5,11 +5,11 @@
 
 {% block head %}
 <script>
-const Config = {
-    PRESSURE_TRANSDUCERS: {{ config.PRESSURE_TRANSDUCERS | tojson }},
-    NUM_PRESSURE_TRANSDUCERS: {{ config.NUM_PRESSURE_TRANSDUCERS }},
-    PRESSURE_BOUNDARIES: {{ config.PRESSURE_BOUNDARIES | tojson }}
-};
+    const Config = {
+        PRESSURE_TRANSDUCERS: {{ config.PRESSURE_TRANSDUCERS | tojson }},
+        NUM_PRESSURE_TRANSDUCERS: {{ config.NUM_PRESSURE_TRANSDUCERS }},
+        PRESSURE_BOUNDARIES: {{ config.PRESSURE_BOUNDARIES | tojson }}
+    };
 </script>
 <script src="{{ url_for('static', filename='js/pt_config.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pt_line.js') }}"></script>
@@ -42,15 +42,16 @@ const Config = {
             {% endfor %}
         </div>
     </div>
+    <div id="serial-monitor-slot"></div>
     <div id="calibration-pt"></div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    if (window.Calibration && typeof window.Calibration.initPT === 'function') {
-        window.Calibration.initPT();
-    }
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.Calibration && typeof window.Calibration.initPT === 'function') {
+            window.Calibration.initPT();
+        }
+    });
 </script>
 {% endblock %}

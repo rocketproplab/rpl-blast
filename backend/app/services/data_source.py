@@ -83,6 +83,17 @@ class SimulatorSource:
             "lc": lc,
             "timestamp": now,
         }
+
+        # Write every packet to the serial monitor buffer
+        monitor = getattr(self.settings, '_serial_monitor_buffer', None)
+        if monitor:
+            # Format like a real flight computer JSON packet
+            packet = json.dumps({"value": {"pt": [round(v, 2) for v in pt],
+                                           "tc": [round(v, 2) for v in tc],
+                                           "lc": [round(v, 2) for v in lc],
+                                           "fcv": [int(v) for v in fcv_actual]}})
+            monitor.add_line(packet, source="simulator")
+
         return value, now
 
     def shutdown(self) -> None:
@@ -140,6 +151,11 @@ class SerialSource:
             return float(value)
 
     def _parse_and_update(self, raw_line: str) -> None:
+        # Write every raw packet to the serial monitor buffer
+        monitor = getattr(self.settings, '_serial_monitor_buffer', None)
+        if monitor and raw_line:
+            monitor.add_line(raw_line, source="serial")
+
         try:
             data = json.loads(raw_line)
         except Exception:
