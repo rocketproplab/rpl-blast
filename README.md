@@ -64,12 +64,22 @@ You can customize the host and port via environment variables `HOST` and `PORT` 
 
 ## Dashboard Pages
 
-| Route               | Page                      | Description |
-|----------------------|---------------------------|-------------|
-| `/`                  | Home / Dashboard          | Navigation hub with cards linking to each sensor page. |
-| `/pressure`          | Pressure Transducers      | Live line plots (per‑sensor subplots), an aggregate overlay plot, and stats cards (latest, avg, rate, max). Includes calibration controls. |
-| `/thermocouples`     | Thermocouples & Load Cells| Subplots and aggregate views for TCs and LCs, with stats and calibration. |
-| `/valves`            | Flow Control Valves       | Grid of valve actual/expected state indicators (on/off). |
+```mermaid
+flowchart LR
+    HOME["/\nDashboard Home"] --> PRESS["/pressure\nPressure Transducers"]
+    HOME --> TC["/thermocouples\nThermocouples & Load Cells"]
+    HOME --> VALVES["/valves\nFlow Control Valves"]
+
+    PRESS --> P1["Per-sensor subplots\nAggregate overlay\nStats cards\nCalibration controls"]
+    TC --> T1["TC & LC subplots\nAggregate views\nStats & calibration"]
+    VALVES --> V1["Actual / Expected\nstate indicators"]
+
+    classDef page fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef detail fill:#34495e,stroke:#2c3e50,color:#fff
+
+    class HOME,PRESS,TC,VALVES page
+    class P1,T1,V1 detail
+```
 
 Every page includes a **Serial Monitor** toggle button that opens an in‑page console showing raw data packets as they arrive.
 
@@ -109,50 +119,47 @@ subpage3:
 
 ## API Reference
 
-### Telemetry Data
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | `/data` | Returns the latest sensor snapshot. Accepts `?type=all\|pt\|tc\|lc\|fcv_actual\|fcv_expected` to filter. |
-| `GET`  | `/data?type=pt` | Returns only pressure transducer values. |
+```mermaid
+flowchart LR
+    subgraph TELE["Telemetry"]
+        D1["GET /data"]
+        D2["GET /data?type=pt"]
+    end
 
-**Response shape:**
-```json
-{
-  "value": { "pt": [...], "tc": [...], "lc": [...], "fcv_actual": [...], "fcv_expected": [...], "timestamp": 1234567890.0 },
-  "timestamp": 1234567890.0,
-  "raw": { ... },
-  "adjusted": { ... },
-  "offsets": { "pt1": 0.0, ... }
-}
+    subgraph CALIB["Calibration"]
+        C1["GET /api/offsets"]
+        C2["PUT /api/offsets"]
+        C3["POST /api/zero/sensor_id"]
+        C4["POST /api/zero_all"]
+        C5["POST /api/reset_offsets"]
+    end
+
+    subgraph SERIAL["Serial Monitor"]
+        S1["GET /api/serial/logs"]
+    end
+
+    subgraph BROWSER["Browser Telemetry"]
+        B1["POST /api/browser_heartbeat"]
+        B2["POST /api/browser_status"]
+    end
+
+    subgraph HEALTH["Health & Diagnostics"]
+        H1["GET /healthz"]
+        H2["GET /api/logging/status"]
+    end
+
+    classDef tele fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef calib fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef serial fill:#e8a838,stroke:#b07c20,color:#fff
+    classDef browser fill:#9b59b6,stroke:#6c3483,color:#fff
+    classDef health fill:#e67e73,stroke:#b35a52,color:#fff
+
+    class D1,D2 tele
+    class C1,C2,C3,C4,C5 calib
+    class S1 serial
+    class B1,B2 browser
+    class H1,H2 health
 ```
-- `value` and `adjusted` are identical (kept for legacy JS compatibility).
-- `raw` contains pre‑offset sensor values.
-
-### Calibration
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | `/api/offsets` | Returns `{ "offsets": { sensor_id: float } }` |
-| `PUT`  | `/api/offsets` | Partial update — body is `{ sensor_id: value }`, merged with existing offsets. |
-| `POST` | `/api/zero/{sensor_id}` | Sets offset to negate the current raw reading (zeroes the sensor). |
-| `POST` | `/api/zero_all` | Zeroes all sensors using their current raw values. |
-| `POST` | `/api/reset_offsets` | Resets all offsets to `0.0`. |
-
-### Serial Monitor
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | `/api/serial/logs?after=-1` | Returns buffered raw serial lines. Pass `after=<index>` for incremental polling. |
-
-### Browser Telemetry
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/browser_heartbeat` | Receives heartbeat pings from the browser monitor script. |
-| `POST` | `/api/browser_status` | Receives browser tab status updates. |
-
-### Health & Diagnostics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | `/healthz` | Overall health, data lag, version, log error count. |
-| `GET`  | `/api/logging/status` | Detailed stats from the logging subsystem (performance, freeze detection, error recovery). |
 
 ---
 
@@ -253,18 +260,25 @@ flowchart TD
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend framework | [FastAPI](https://fastapi.tiangolo.com/) 0.115 + [Uvicorn](https://www.uvicorn.org/) |
-| Data validation | [Pydantic](https://docs.pydantic.dev/) v2 |
-| Templating | [Jinja2](https://jinja.palletsprojects.com/) (served by FastAPI) |
-| Charting | [Plotly.js](https://plotly.com/javascript/) (CDN) |
-| Serial I/O | [PySerial](https://pyserial.readthedocs.io/) |
-| Config | [PyYAML](https://pyyaml.org/) (layered base + user) |
-| System monitoring | [psutil](https://github.com/giampaolo/psutil) |
-| Testing | [pytest](https://docs.pytest.org/) + FastAPI `TestClient` |
-| CI | GitHub Actions |
-| License | MIT |
+```mermaid
+block-beta
+    columns 2
+    A["Backend: FastAPI 0.115 + Uvicorn"]:2
+    B["Validation: Pydantic v2"] C["Templating: Jinja2"]
+    D["Charting: Plotly.js CDN"] E["Serial I/O: PySerial"]
+    F["Config: PyYAML"] G["Monitoring: psutil"]
+    H["Testing: pytest + TestClient"] I["CI: GitHub Actions"]
+
+    style A fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    style B fill:#50b86c,stroke:#2f7a42,color:#fff
+    style C fill:#50b86c,stroke:#2f7a42,color:#fff
+    style D fill:#e8a838,stroke:#b07c20,color:#fff
+    style E fill:#e8a838,stroke:#b07c20,color:#fff
+    style F fill:#9b59b6,stroke:#6c3483,color:#fff
+    style G fill:#9b59b6,stroke:#6c3483,color:#fff
+    style H fill:#e67e73,stroke:#b35a52,color:#fff
+    style I fill:#e67e73,stroke:#b35a52,color:#fff
+```
 
 ---
 

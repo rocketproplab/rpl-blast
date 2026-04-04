@@ -143,28 +143,31 @@ flowchart TB
         direction TB
 
         subgraph ROUTERS["Routers"]
+            direction LR
             R1["data.py"]
             R2["calibration.py"]
             R3["pages.py"]
         end
 
         subgraph SERVICES["Services"]
-            S1["DataSource\n(Simulator / Serial)"]
+            direction LR
+            S1["DataSource"]
             S2["CalibrationService"]
-            S3["LatestReadingCache"]
+            S3["ReadingCache"]
             S4["SerialMonitorBuffer"]
         end
 
         subgraph LOGGING["Logging Subsystem"]
+            direction LR
             L1["LoggerManager"]
             L2["EventLogger"]
             L3["SerialLogger"]
-            L4["PerformanceMonitor"]
+            L4["PerfMonitor"]
             L5["ErrorRecovery"]
             L6["FreezeDetector"]
         end
 
-        TEMPLATES["Jinja2 Templates + Static Assets\n(Plotly.js)\n/, /pressure, /thermocouples, /valves"]
+        TEMPLATES["Jinja2 Templates + Plotly.js"]
 
         R1 --> S1
         R1 --> S3
@@ -203,11 +206,20 @@ BLAST uses a **layered YAML config** approach — a mandatory base file plus opt
 
 ### Config Files
 
-| File | Git‑tracked? | Purpose |
-|------|:---:|---------|
-| `frontend/app/config.base.yaml` | ✅ | Shared defaults — sensor definitions, serial settings, boundaries. |
-| `frontend/app/config.user.yaml` | ❌ | Your local overrides (serial port, data source, custom sensor names). Copy from `config.user.yaml.example`. |
-| `frontend/app/config.ci.yaml` | ✅ | CI‑specific fallback config. |
+```mermaid
+flowchart LR
+    BASE["config.base.yaml\n✅ Git-tracked"] ---|deep merge| MERGED["Merged Settings"]
+    USER["config.user.yaml\n❌ Git-ignored"] ---|overrides| MERGED
+    CI["config.ci.yaml\n✅ Git-tracked"] -.->|CI fallback| MERGED
+
+    classDef tracked fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef local fill:#e8a838,stroke:#b07c20,color:#fff
+    classDef result fill:#4a90d9,stroke:#2c5f8a,color:#fff
+
+    class BASE,CI tracked
+    class USER local
+    class MERGED result
+```
 
 ### How Loading Works (`backend/app/config/loader.py`)
 
@@ -347,33 +359,75 @@ All templates extend `base.html`, which provides:
 - A header with the BLAST title, current page name, a Serial Monitor toggle button, and a "Back to Dashboard" nav link (shown on subpages).
 - Loads `dashboard.css`, Plotly.js (CDN), `serial_monitor.js`, and `browser_monitor.js`.
 
-| Template | Route | Includes |
-|----------|-------|----------|
-| `index.html` | `/` | Navigation cards linking to Thermocouples, Pressure, and Valves pages. |
-| `pressure.html` | `/pressure` | Injects `Config` JS object with PT definitions. Loads `pt_config.js`, `pt_line.js`, `pt_agg.js`, `pt_stats.js`, `calibration.js`. Renders stats cards server‑side (Jinja loop). |
-| `thermocouples.html` | `/thermocouples` | Injects TC + LC config. Loads `tc_agg.js`, `tc_subplots.js`, `tc_stats.js`, `lc_agg.js`, `lc_subplots.js`, `lc_stats.js`, `calibration.js`. |
-| `valves.html` | `/valves` | Injects FCV config. Loads `valves.js` and `get_data.js`. Renders a 2×4 grid with a centered "BLAST Phoenix" branding card. |
+```mermaid
+flowchart LR
+    subgraph PAGES["Page Templates"]
+        direction TB
+        IDX["index.html\n/ Dashboard home"]
+        PR["pressure.html\n/pressure"]
+        TC["thermocouples.html\n/thermocouples"]
+        VL["valves.html\n/valves"]
+    end
+
+    IDX --> N1["Nav cards"]
+    PR --> P1["pt_config, pt_line,\npt_agg, pt_stats,\ncalibration.js"]
+    TC --> T1["tc_agg, tc_subplots,\ntc_stats, lc_agg,\nlc_subplots, lc_stats,\ncalibration.js"]
+    VL --> V1["valves.js,\nget_data.js"]
+
+    classDef page fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef scripts fill:#50b86c,stroke:#2f7a42,color:#fff
+
+    class IDX,PR,TC,VL page
+    class N1,P1,T1,V1 scripts
+```
+
+All templates extend `base.html`, which loads `dashboard.css`, Plotly.js (CDN), `serial_monitor.js`, and `browser_monitor.js`.
 
 ### JavaScript Modules (`frontend/app/static/js/`)
 
-| Module | Purpose |
-|--------|---------|
-| `get_data.js` | Shared helper to poll `GET /data` and dispatch values to callbacks. |
-| `pt_config.js` | Plotly layout/config constants for pressure charts. |
-| `pt_line.js` | Creates and updates per‑sensor line subplots (one chart per PT). |
-| `pt_agg.js` | Aggregate overlay chart with all PTs on one plot. |
-| `pt_stats.js` | Updates stat cards (latest, 10s avg, rate, max). |
-| `tc_agg.js` | TC aggregate chart. |
-| `tc_subplots.js` | TC per‑sensor subplots. |
-| `tc_stats.js` | TC stats updater. |
-| `lc_agg.js` | LC aggregate chart. |
-| `lc_subplots.js` | LC per‑sensor subplots. |
-| `lc_stats.js` | LC stats updater. |
-| `calibration.js` | Renders calibration UI controls (zero, set offset, reset) below the plots. |
-| `valves.js` | Polls valve data and toggles CSS classes for on/off indicator styling. |
-| `serial_monitor.js` | Builds the serial monitor panel, polls `/api/serial/logs`, handles auto‑scroll (only scrolls if user is at the bottom). |
-| `browser_monitor.js` | Sends periodic heartbeats and status updates to the backend. |
-| `charts.js` | Minimal chart utility helpers. |
+```mermaid
+flowchart TB
+    subgraph SHARED["Shared"]
+        direction LR
+        GD["get_data.js\nPolling helper"]
+        CAL["calibration.js\nUI controls"]
+        SM["serial_monitor.js\nPanel + auto-scroll"]
+        BM["browser_monitor.js\nHeartbeat reporter"]
+        CH["charts.js\nUtilities"]
+    end
+
+    subgraph PT["Pressure Transducers"]
+        direction LR
+        PTC["pt_config.js"]
+        PTL["pt_line.js"]
+        PTA["pt_agg.js"]
+        PTS["pt_stats.js"]
+    end
+
+    subgraph TCLC["Thermocouples & Load Cells"]
+        direction LR
+        TCA["tc_agg.js"]
+        TCS["tc_subplots.js"]
+        TCST["tc_stats.js"]
+        LCA["lc_agg.js"]
+        LCS["lc_subplots.js"]
+        LCST["lc_stats.js"]
+    end
+
+    subgraph VLV["Valves"]
+        VJS["valves.js"]
+    end
+
+    classDef shared fill:#34495e,stroke:#2c3e50,color:#fff
+    classDef pt fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef tc fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef valve fill:#e8a838,stroke:#b07c20,color:#fff
+
+    class GD,CAL,SM,BM,CH shared
+    class PTC,PTL,PTA,PTS pt
+    class TCA,TCS,TCST,LCA,LCS,LCST tc
+    class VJS valve
+```
 
 ### Styles (`frontend/app/static/css/dashboard.css`)
 
@@ -385,29 +439,52 @@ A single CSS file covering all pages — layout grids, header, nav cards, stat b
 
 ### Subsystem Components (`backend/app/logging/`)
 
-| Component | File | Responsibilities |
-|-----------|------|-----------------|
-| **LoggerManager** | `logger_manager.py` | Creates a timestamped run directory under `frontend/logs/`. Writes `data.jsonl` and `data.csv` per run. Creates a `latest` symlink (best‑effort). Produces a `run_summary.json` on shutdown. |
-| **EventLogger** | `event_logger.py` | Structured event logs: data source changes, system state transitions, startup/shutdown events. |
-| **SerialLogger** | `serial_logger.py` | Logs serial connection attempts/results and every data read (success/failure, port, raw content). |
-| **PerformanceMonitor** | `performance_monitor.py` | Start/end timer‑based measurements for operations like `data_read` and `api_logging_status`. Tracks data lag in milliseconds. |
-| **ErrorRecovery** | `error_recovery.py` | Categorizes and counts errors. Exposes `health_check()` for the logging status API. |
-| **FreezeDetector** | `freeze_detector.py` | Heartbeat‑based watchdog. Expects heartbeats from named loops (`data_acquisition`, `serial_communication`, `api_requests`). Detects stalls and reports via `health_check()`. |
+```mermaid
+flowchart TB
+    subgraph LOG["Logging Components"]
+        direction LR
+        LM["LoggerManager\nJSONL + CSV + run dirs"]
+        EL["EventLogger\nSystem events"]
+        SL["SerialLogger\nSerial I/O logs"]
+    end
+
+    subgraph MON["Monitoring"]
+        direction LR
+        PM["PerformanceMonitor\nLatency + data lag"]
+        ER["ErrorRecovery\nError counts + health"]
+        FD["FreezeDetector\nHeartbeat watchdog"]
+    end
+
+    classDef logger fill:#9b59b6,stroke:#6c3483,color:#fff
+    classDef monitor fill:#e8a838,stroke:#b07c20,color:#fff
+
+    class LM,EL,SL logger
+    class PM,ER,FD monitor
+```
 
 ### Runtime Log Outputs
 
-```
-frontend/logs/
-├── data.jsonl                  # Legacy append‑only JSONL (all runs)
-├── <timestamp>/                # Per-run directory
-│   ├── data.jsonl              # Structured data log for this run
-│   ├── data.csv                # CSV data log for this run
-│   ├── events.jsonl            # System events
-│   ├── performance.jsonl       # Performance metrics
-│   ├── errors.jsonl            # Error records
-│   └── run_summary.json        # Generated on shutdown
-├── calibration_offsets.yaml    # Current calibration state
-└── latest -> <timestamp>/      # Symlink to most recent run (best-effort)
+```mermaid
+flowchart TD
+    LOGS["frontend/logs/"] --> LEGACY["data.jsonl\nLegacy append-only"]
+    LOGS --> RUN["&lt;timestamp&gt;/\nPer-run directory"]
+    LOGS --> CALOFFSETS["calibration_offsets.yaml"]
+    LOGS --> LATEST["latest → &lt;timestamp&gt;/\nSymlink"]
+
+    RUN --> RD["data.jsonl"]
+    RUN --> RC["data.csv"]
+    RUN --> RE["events.jsonl"]
+    RUN --> RP["performance.jsonl"]
+    RUN --> RR["errors.jsonl"]
+    RUN --> RS["run_summary.json"]
+
+    classDef dir fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef file fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef link fill:#e8a838,stroke:#b07c20,color:#fff
+
+    class LOGS,RUN dir
+    class LEGACY,RD,RC,RE,RP,RR,RS,CALOFFSETS file
+    class LATEST link
 ```
 
 ### Querying at Runtime
@@ -442,12 +519,19 @@ SerialSource expects **one JSON object per line** from the flight computer:
 {"value": {"pt": [100.5, 200.3, ...], "tc": [25.0, 30.5, ...], "lc": [10.2, ...], "fcv": [0, 1, 0, ...]}}
 ```
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `pt` | `float[]` | Pressure transducer values (ordered by config index). |
-| `tc` | `float[]` | Thermocouple values. |
-| `lc` | `float[]` | Load cell values. |
-| `fcv` | `int[]` (0/1) | Flow control valve states (cast to bool internally). |
+```mermaid
+flowchart LR
+    FRAME["Serial JSON Frame"] --> PT["pt: float array\nPressure transducers"]
+    FRAME --> TC["tc: float array\nThermocouples"]
+    FRAME --> LC["lc: float array\nLoad cells"]
+    FRAME --> FCV["fcv: int array 0/1\nValve states"]
+
+    classDef frame fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef sensor fill:#50b86c,stroke:#2f7a42,color:#fff
+
+    class FRAME frame
+    class PT,TC,LC,FCV sensor
+```
 
 - Array lengths must match the config (`NUM_PRESSURE_TRANSDUCERS`, etc.). Extra values are ignored; missing values keep their previous value.
 - Malformed lines (non‑JSON or missing `value` key) are silently dropped — the last valid snapshot is preserved.
@@ -473,12 +557,19 @@ Default: **115200 baud**, port varies by OS. Configured in `config.base.yaml` / 
 
 ### Operations
 
-| Operation | Effect |
-|-----------|--------|
-| **Zero** (`POST /api/zero/{id}`) | Sets offset = −current_raw, so adjusted reads ~0. |
-| **Zero All** (`POST /api/zero_all`) | Zeroes every numeric sensor. |
-| **Set Offset** (`PUT /api/offsets`) | Directly sets arbitrary offset values. Partial merge. |
-| **Reset** (`POST /api/reset_offsets`) | All offsets → 0.0. |
+```mermaid
+flowchart LR
+    ZERO["Zero\nPOST /api/zero/id"] --> EFF1["offset = −raw\nadjusted ≈ 0"]
+    ZALL["Zero All\nPOST /api/zero_all"] --> EFF2["All sensors\nzeroed"]
+    SET["Set Offset\nPUT /api/offsets"] --> EFF3["Arbitrary values\npartial merge"]
+    RESET["Reset\nPOST /api/reset_offsets"] --> EFF4["All offsets → 0.0"]
+
+    classDef op fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef effect fill:#50b86c,stroke:#2f7a42,color:#fff
+
+    class ZERO,ZALL,SET,RESET op
+    class EFF1,EFF2,EFF3,EFF4 effect
+```
 
 ### Persistence
 
@@ -490,38 +581,45 @@ Offsets are saved to `calibration_offsets.yaml` via atomic writes (temp file + r
 
 ### Pages (HTML)
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/` | Dashboard home. |
-| `GET` | `/pressure` | Pressure transducer page. |
-| `GET` | `/thermocouples` | Thermocouples & load cells page. |
-| `GET` | `/valves` | Flow control valves page. |
+```mermaid
+flowchart LR
+    subgraph PAGES["HTML Pages"]
+        P1["GET /"]
+        P2["GET /pressure"]
+        P3["GET /thermocouples"]
+        P4["GET /valves"]
+    end
 
-### Data
+    subgraph DATA["Data"]
+        D1["GET /data?type=all"]
+        D2["GET /api/serial/logs"]
+        D3["POST /api/browser_heartbeat"]
+        D4["POST /api/browser_status"]
+    end
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/data?type=all` | Latest sensor snapshot. Type: `all`, `pt`, `tc`, `lc`, `fcv_actual`, `fcv_expected`. |
-| `GET` | `/api/serial/logs?after=-1` | Buffered serial monitor lines. |
-| `POST` | `/api/browser_heartbeat` | Browser heartbeat. |
-| `POST` | `/api/browser_status` | Browser status. |
+    subgraph CALIB["Calibration"]
+        C1["GET /api/offsets"]
+        C2["PUT /api/offsets"]
+        C3["POST /api/zero/sensor_id"]
+        C4["POST /api/zero_all"]
+        C5["POST /api/reset_offsets"]
+    end
 
-### Calibration
+    subgraph HEALTH["Health & Diagnostics"]
+        H1["GET /healthz"]
+        H2["GET /api/logging/status"]
+    end
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/api/offsets` | Get all offsets. |
-| `PUT` | `/api/offsets` | Partial offset update (body: `{id: float}`). |
-| `POST` | `/api/zero/{sensor_id}` | Zero one sensor. |
-| `POST` | `/api/zero_all` | Zero all sensors. |
-| `POST` | `/api/reset_offsets` | Reset all offsets to 0. |
+    classDef pages fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef data fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef calib fill:#e8a838,stroke:#b07c20,color:#fff
+    classDef health fill:#e67e73,stroke:#b35a52,color:#fff
 
-### Health & Diagnostics
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/healthz` | Health check (status, lag, version, error count). |
-| `GET` | `/api/logging/status` | Detailed logging subsystem stats + health checks. |
+    class P1,P2,P3,P4 pages
+    class D1,D2,D3,D4 data
+    class C1,C2,C3,C4,C5 calib
+    class H1,H2 health
+```
 
 ---
 
