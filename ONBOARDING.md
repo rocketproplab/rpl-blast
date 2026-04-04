@@ -42,10 +42,13 @@ BLAST is a **ground‑side telemetry display and logging tool**. It:
 
 ## System Context
 
-```
-Sensors → Avionics Firmware → USB/UART → BLAST (Python/FastAPI on laptop) → Browser Dashboards
-                                                    ↳ JSONL + CSV logs on disk
-                                                    ↳ /healthz & /api/logging/status
+```mermaid
+flowchart LR
+    A["Sensors"] --> B["Avionics Firmware"]
+    B -->|USB / UART| C["BLAST\n(Python/FastAPI on laptop)"]
+    C --> D["Browser Dashboards"]
+    C --> E["JSONL + CSV logs on disk"]
+    C --> F["/healthz & /api/logging/status"]
 ```
 
 - **Inputs:** JSON lines from firmware (one per frame) over a serial port, or internally generated simulator data.
@@ -126,32 +129,40 @@ Once running, open **http://127.0.0.1:8000** in your browser.
 
 BLAST follows a clean **backend ↔ frontend** split, all served from a single FastAPI process.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                           FastAPI App (main.py)                       │
-│                                                                       │
-│  ┌──────────┐   ┌──────────────┐   ┌──────────────────────────────┐   │
-│  │ Routers  │   │   Services   │   │      Logging Subsystem       │   │
-│  │          │   │              │   │                              │   │
-│  │ data.py  │──▸│ DataSource   │   │  LoggerManager               │   │
-│  │ calib.py │──▸│ (Simulator/  │   │  EventLogger                 │   │
-│  │ pages.py │   │  Serial)     │   │  SerialLogger                │   │
-│  │          │   │              │   │  PerformanceMonitor           │   │
-│  │          │   │ Calibration  │   │  ErrorRecovery               │   │
-│  │          │   │ Service      │   │  FreezeDetector               │   │
-│  │          │   │              │   │                              │   │
-│  │          │   │ ReadingCache │   └──────────────────────────────┘   │
-│  │          │   │              │                                       │
-│  │          │   │ SerialMonitor│                                       │
-│  │          │   │ Buffer       │                                       │
-│  └──────────┘   └──────────────┘                                       │
-│        │                                                               │
-│        ▼                                                               │
-│  ┌──────────────────────────────────────────────┐                      │
-│  │ Jinja2 Templates + Static Assets (Plotly.js) │                      │
-│  │ → /pressure, /thermocouples, /valves, /      │                      │
-│  └──────────────────────────────────────────────┘                      │
-└────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph APP["FastAPI App - main.py"]
+        direction TB
+
+        subgraph ROUTERS["Routers"]
+            R1["data.py"]
+            R2["calibration.py"]
+            R3["pages.py"]
+        end
+
+        subgraph SERVICES["Services"]
+            S1["DataSource\n(Simulator / Serial)"]
+            S2["CalibrationService"]
+            S3["LatestReadingCache"]
+            S4["SerialMonitorBuffer"]
+        end
+
+        subgraph LOGGING["Logging Subsystem"]
+            L1["LoggerManager"]
+            L2["EventLogger"]
+            L3["SerialLogger"]
+            L4["PerformanceMonitor"]
+            L5["ErrorRecovery"]
+            L6["FreezeDetector"]
+        end
+
+        TEMPLATES["Jinja2 Templates + Static Assets\n(Plotly.js)\n/, /pressure, /thermocouples, /valves"]
+
+        R1 --> S1
+        R1 --> S3
+        R2 --> S2
+        R3 --> TEMPLATES
+    end
 ```
 
 ### Data Flow
