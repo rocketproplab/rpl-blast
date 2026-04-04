@@ -158,84 +158,96 @@ subpage3:
 
 ## Project Structure
 
+```mermaid
+flowchart TD
+    ROOT["rpl-blast/"] --> BACKEND["backend/"]
+    ROOT --> FRONTEND["frontend/"]
+    ROOT --> SCRIPTS["scripts/"]
+    ROOT --> TOOLS["tools/"]
+    ROOT --> GHCI[".github/workflows/ci.yml"]
+    ROOT --> REQS["requirements.txt"]
+
+    BACKEND --> BAPP["app/"]
+    BACKEND --> BSTATE["state/calibration_offsets.yaml"]
+    BACKEND --> BTESTS["tests/"]
+
+    BAPP --> MAIN["main.py — App factory, reader loop, healthz"]
+    BAPP --> VER["VERSION + version.py"]
+    BAPP --> CONFIG["config/"]
+    BAPP --> ROUTERS["routers/"]
+    BAPP --> SCHEMAS["schemas/data.py — DataEnvelope"]
+    BAPP --> SERVICES["services/"]
+    BAPP --> LOGGING_PKG["logging/"]
+
+    CONFIG --> LOADER["loader.py — Layered YAML config + Settings"]
+    CONFIG --> PATHS["paths.py — Resolved FS paths"]
+
+    ROUTERS --> RDATA["data.py — /data, /api/serial/logs"]
+    ROUTERS --> RCALIB["calibration.py — /api/offsets, /api/zero"]
+    ROUTERS --> RPAGES["pages.py — HTML page routes"]
+
+    SERVICES --> DSRC["data_source.py — SimulatorSource, SerialSource"]
+    SERVICES --> SCALIB["calibration.py — CalibrationStore + Service"]
+    SERVICES --> CACHE["reading_cache.py — LatestReadingCache"]
+    SERVICES --> SMON["serial_monitor.py — Ring buffer"]
+
+    LOGGING_PKG --> LM["logger_manager.py — JSONL, CSV, run dirs"]
+    LOGGING_PKG --> EL["event_logger.py — System events"]
+    LOGGING_PKG --> SL["serial_logger.py — Serial I/O logs"]
+    LOGGING_PKG --> PM["performance_monitor.py — Latency tracking"]
+    LOGGING_PKG --> ER["error_recovery.py — Error health checks"]
+    LOGGING_PKG --> FD["freeze_detector.py — Stall detection"]
+
+    BTESTS --> T1["test_app_basic.py"]
+    BTESTS --> T2["test_calibration_api.py"]
+
+    FRONTEND --> FAPP["app/"]
+    FRONTEND --> FLOGS["logs/ — Runtime logs per run"]
+
+    FAPP --> CFGBASE["config.base.yaml — Sensor definitions"]
+    FAPP --> CFGCI["config.ci.yaml"]
+    FAPP --> CFGUSER["config.user.yaml.example"]
+    FAPP --> LOGCFG["logging_config.yaml"]
+    FAPP --> TEMPLATES["templates/"]
+    FAPP --> STATIC["static/"]
+
+    TEMPLATES --> TBASE["base.html — Layout shell"]
+    TEMPLATES --> TIDX["index.html — Dashboard home"]
+    TEMPLATES --> TPRESS["pressure.html — PT page"]
+    TEMPLATES --> TTC["thermocouples.html — TC/LC page"]
+    TEMPLATES --> TVALVE["valves.html — Valve page"]
+
+    STATIC --> CSS["css/dashboard.css"]
+    STATIC --> JS["js/ — 16 modules"]
+    STATIC --> FONTS["fonts/"]
+
+    JS --> JSDATA["get_data.js, calibration.js"]
+    JS --> JSPT["pt_config, pt_line, pt_agg, pt_stats"]
+    JS --> JSTC["tc_agg, tc_subplots, tc_stats"]
+    JS --> JSLC["lc_agg, lc_subplots, lc_stats"]
+    JS --> JSOTHER["valves, serial_monitor, browser_monitor"]
+
+    SCRIPTS --> SMAC["Setup/Start/Uninstall Mac"]
+    SCRIPTS --> SWIN["setup/start/uninstall Win"]
+
+    TOOLS --> SMOKE["smoke_test_fastapi.py"]
+
+    classDef backend fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef frontend fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef infra fill:#e8a838,stroke:#b07c20,color:#fff
+    classDef logging fill:#9b59b6,stroke:#6c3483,color:#fff
+    classDef tests fill:#e67e73,stroke:#b35a52,color:#fff
+    classDef root fill:#34495e,stroke:#2c3e50,color:#fff
+
+    class ROOT root
+    class BACKEND,BAPP,MAIN,VER,CONFIG,LOADER,PATHS,ROUTERS,RDATA,RCALIB,RPAGES,SCHEMAS,SERVICES,DSRC,SCALIB,CACHE,SMON,BSTATE backend
+    class LOGGING_PKG,LM,EL,SL,PM,ER,FD logging
+    class BTESTS,T1,T2 tests
+    class FRONTEND,FAPP,FLOGS,CFGBASE,CFGCI,CFGUSER,LOGCFG,TEMPLATES,TBASE,TIDX,TPRESS,TTC,TVALVE,STATIC,CSS,JS,JSDATA,JSPT,JSTC,JSLC,JSOTHER,FONTS frontend
+    class SCRIPTS,SMAC,SWIN,TOOLS,SMOKE,GHCI,REQS infra
 ```
-rpl-blast/
-├── backend/
-│   ├── app/
-│   │   ├── main.py                  # FastAPI app factory, startup/shutdown, reader loop, healthz
-│   │   ├── VERSION                  # Semantic version string (currently 0.1.0)
-│   │   ├── version.py               # Version helper
-│   │   ├── config/
-│   │   │   ├── loader.py            # Layered YAML config loading + Settings dataclass
-│   │   │   └── paths.py             # Resolved filesystem paths (templates, static, configs)
-│   │   ├── routers/
-│   │   │   ├── data.py              # /data, /api/serial/logs, browser heartbeat endpoints
-│   │   │   ├── calibration.py       # /api/offsets, /api/zero/*, /api/reset_offsets
-│   │   │   └── pages.py             # HTML page routes (/, /pressure, /thermocouples, /valves)
-│   │   ├── schemas/
-│   │   │   └── data.py              # Pydantic DataEnvelope model
-│   │   ├── services/
-│   │   │   ├── data_source.py       # SimulatorSource + SerialSource (DataSource protocol)
-│   │   │   ├── calibration.py       # CalibrationStore (YAML persistence) + CalibrationService
-│   │   │   ├── reading_cache.py     # Thread-safe LatestReadingCache
-│   │   │   └── serial_monitor.py    # SerialMonitorBuffer (ring buffer for raw packets)
-│   │   ├── logging/
-│   │   │   ├── logger_manager.py    # Orchestrates all log writers (JSONL, CSV, run dirs)
-│   │   │   ├── event_logger.py      # Structured event logging (startup, shutdown, source changes)
-│   │   │   ├── serial_logger.py     # Serial connection & data read logging
-│   │   │   ├── performance_monitor.py # Timer-based latency & throughput tracking
-│   │   │   ├── error_recovery.py    # Error tracking with health checks
-│   │   │   └── freeze_detector.py   # Heartbeat-based stall detection
-│   │   └── state/                   # (gitignored runtime state)
-│   ├── state/
-│   │   └── calibration_offsets.yaml # Persisted calibration offsets
-│   └── tests/
-│       ├── test_app_basic.py        # Health, pages, /data shape, type filtering
-│       └── test_calibration_api.py  # Offset CRUD, zero, reset
-│
-├── frontend/
-│   ├── app/
-│   │   ├── config.base.yaml         # Base configuration (sensors, serial, boundaries)
-│   │   ├── config.ci.yaml           # CI-specific config
-│   │   ├── config.user.yaml.example # Template for local overrides
-│   │   ├── logging_config.yaml      # Python logging handler config
-│   │   ├── templates/
-│   │   │   ├── base.html            # Jinja2 base layout (header, nav, serial monitor btn)
-│   │   │   ├── index.html           # Dashboard home with nav cards
-│   │   │   ├── pressure.html        # PT subplots, aggregate, stats, calibration
-│   │   │   ├── thermocouples.html   # TC/LC subplots, aggregate, stats, calibration
-│   │   │   └── valves.html          # Valve state grid
-│   │   └── static/
-│   │       ├── css/
-│   │       │   └── dashboard.css    # All page styles
-│   │       ├── js/
-│   │       │   ├── get_data.js      # Shared /data polling helper
-│   │       │   ├── pt_config.js     # PT Plotly layout config
-│   │       │   ├── pt_line.js       # PT per-sensor subplot charts
-│   │       │   ├── pt_agg.js        # PT aggregate overlay chart
-│   │       │   ├── pt_stats.js      # PT stats card updater
-│   │       │   ├── tc_agg.js        # TC aggregate chart
-│   │       │   ├── tc_subplots.js   # TC per-sensor subplots
-│   │       │   ├── tc_stats.js      # TC stats updater
-│   │       │   ├── lc_agg.js        # LC aggregate chart
-│   │       │   ├── lc_subplots.js   # LC per-sensor subplots
-│   │       │   ├── lc_stats.js      # LC stats updater
-│   │       │   ├── calibration.js   # Calibration UI controls
-│   │       │   ├── valves.js        # Valve state rendering
-│   │       │   ├── serial_monitor.js# Serial Monitor panel (toggle, auto-scroll, polling)
-│   │       │   ├── browser_monitor.js# Browser heartbeat/status reporter
-│   │       │   └── charts.js        # (Minimal chart utilities)
-│   │       └── fonts/               # Custom fonts
-│   └── logs/                        # Runtime logs (per-run dirs, data.jsonl, CSV, offsets)
-│
-├── scripts/                         # One-click setup/start/uninstall for macOS & Windows
-├── tools/
-│   └── smoke_test_fastapi.py        # CI smoke test (exercises /healthz, /data, calibration)
-├── .github/workflows/ci.yml         # GitHub Actions CI (Python 3.9, smoke test + pytest)
-├── requirements.txt                 # Python dependencies
-├── LICENSE                          # MIT License
-└── ONBOARDING.md                    # In-depth onboarding guide
-```
+
+**Color legend:** 🟦 Backend  🟩 Frontend  🟪 Logging  🟥 Tests  🟨 Infrastructure
 
 ---
 

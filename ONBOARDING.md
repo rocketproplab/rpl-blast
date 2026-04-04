@@ -49,6 +49,14 @@ flowchart LR
     C --> D["Browser Dashboards"]
     C --> E["JSONL + CSV logs on disk"]
     C --> F["/healthz & /api/logging/status"]
+
+    classDef hardware fill:#e67e73,stroke:#b35a52,color:#fff
+    classDef blast fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef output fill:#50b86c,stroke:#2f7a42,color:#fff
+
+    class A,B hardware
+    class C blast
+    class D,E,F output
 ```
 
 - **Inputs:** JSON lines from firmware (one per frame) over a serial port, or internally generated simulator data.
@@ -163,6 +171,16 @@ flowchart TB
         R2 --> S2
         R3 --> TEMPLATES
     end
+
+    classDef router fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef service fill:#50b86c,stroke:#2f7a42,color:#fff
+    classDef logging fill:#9b59b6,stroke:#6c3483,color:#fff
+    classDef ui fill:#e8a838,stroke:#b07c20,color:#fff
+
+    class R1,R2,R3 router
+    class S1,S2,S3,S4 service
+    class L1,L2,L3,L4,L5,L6 logging
+    class TEMPLATES ui
 ```
 
 ### Data Flow
