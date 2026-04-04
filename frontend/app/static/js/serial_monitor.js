@@ -38,22 +38,38 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Build the serial monitor HTML
+    // Build the serial monitor HTML — use a div instead of textarea
+    // so that appending DOM nodes does NOT reset scroll position
     var paneHTML =
         '<div id="serial-pane" class="serial-pane">' +
         '<div class="serial-pane-header">' +
         '<h2>Serial Monitor</h2>' +
         '</div>' +
         '<div class="serial-pane-body">' +
-        '<textarea id="serial-console" readonly></textarea>' +
+        '<div id="serial-console"></div>' +
         '</div>' +
         '</div>';
 
     var pollTimer = null;
     var nextIndex = -1; // Start by getting all buffered lines
+    var autoScroll = true; // Track whether we should auto-scroll
+
+    // Attach scroll listener to the console element to detect
+    // when the user scrolls up (pause auto-scroll) or back to
+    // the bottom (resume auto-scroll).
+    function attachScrollListener(el) {
+        el.addEventListener('scroll', function () {
+            var atBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 10;
+            autoScroll = atBottom;
+        });
+    }
 
     function startPolling() {
         if (pollTimer) return; // Already polling
+
+        // Attach the scroll listener once when polling starts
+        var el = document.getElementById('serial-console');
+        if (el) attachScrollListener(el);
 
         pollTimer = setInterval(function () {
             fetch('/api/serial/logs?after=' + nextIndex)
@@ -64,16 +80,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     var console_el = document.getElementById('serial-console');
                     if (!console_el) return;
 
+                    // Build the new text to append
                     var newText = '';
                     for (var i = 0; i < data.lines.length; i++) {
                         var line = data.lines[i];
                         newText += line.timestamp + '  ' + formatPacket(line.raw) + '\n';
                     }
 
-                    console_el.value += newText;
+                    // Appending a text node to a div does NOT reset scrollTop
+                    console_el.appendChild(document.createTextNode(newText));
 
-                    // Auto-scroll to bottom (like Arduino IDE)
-                    console_el.scrollTop = console_el.scrollHeight;
+                    // Only auto-scroll if the user hasn't scrolled up
+                    if (autoScroll) {
+                        console_el.scrollTop = console_el.scrollHeight;
+                    }
 
                     // Update index for next incremental fetch
                     nextIndex = data.next_index - 1;
@@ -95,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (isOpen) {
         slot.innerHTML = paneHTML;
         serialBtn.textContent = 'Close Serial Monitor';
+        autoScroll = true;
         startPolling();
     }
 
@@ -112,6 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
             slot.innerHTML = paneHTML;
             serialBtn.textContent = 'Close Serial Monitor';
             nextIndex = -1; // Get recent history when opening
+            autoScroll = true;
             localStorage.setItem('serialMonitorOpen', 'true');
             startPolling();
         }

@@ -780,22 +780,23 @@ button[onclick*="'right'"] {
 
 .serial-pane-body {
     flex: 1;
-    display: flex;
-    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
     padding: 0;
 }
 
 #serial-console {
-    flex: 1;
     background: #1e1e1e;
     color: #6a9955;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.75rem;
-    border: none;
-    resize: none;
-    outline: none;
+    font-size: 0.70rem;
     padding: 10px 15px;
     width: 100%;
     height: 100%;
     line-height: 1.4;
+    overflow-y: auto;
+    white-space: pre;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    user-select: text;
 }
