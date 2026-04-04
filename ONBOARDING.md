@@ -44,22 +44,25 @@ BLAST is a **ground‑side telemetry display and logging tool**. It:
 
 ```mermaid
 flowchart LR
-    A["Sensors"] --> B["Avionics Firmware"]
-    B -->|USB / UART| C["BLAST\n(Python/FastAPI on laptop)"]
-    C --> D["Browser Dashboards"]
-    C --> E["JSONL + CSV logs on disk"]
-    C --> F["/healthz & /api/logging/status"]
+    A["Sensors\n(on rocket)"] -->|onboard| B["Flight Computer"]
+    B -->|Ethernet| C["Ground Station"]
+    C -->|Serial Port| D["BLAST\n(Python/FastAPI on laptop)"]
+    D --> E["Browser Dashboards"]
+    D --> F["JSONL + CSV logs on disk"]
+    D --> G["/healthz & /api/logging/status"]
 
-    classDef hardware fill:#e67e73,stroke:#b35a52,color:#fff
+    classDef rocket fill:#e67e73,stroke:#b35a52,color:#fff
+    classDef ground fill:#e8a838,stroke:#b07c20,color:#fff
     classDef blast fill:#4a90d9,stroke:#2c5f8a,color:#fff
     classDef output fill:#50b86c,stroke:#2f7a42,color:#fff
 
-    class A,B hardware
-    class C blast
-    class D,E,F output
+    class A,B rocket
+    class C ground
+    class D blast
+    class E,F,G output
 ```
 
-- **Inputs:** JSON lines from firmware (one per frame) over a serial port, or internally generated simulator data.
+- **Data path:** Sensors on the rocket feed the flight computer, which transmits data over Ethernet to a ground station. The ground station forwards JSON frames over a serial port to BLAST. In development, BLAST can also use a built‑in simulator instead of real hardware.
 - **Outputs:** HTML dashboards, REST API (JSON), disk logs.
 - **Scope:** Passive observer — BLAST never sends commands to hardware.
 
