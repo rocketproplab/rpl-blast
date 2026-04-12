@@ -10,7 +10,23 @@ BLAST reads data from either a built‑in simulator or a serial‑connected flig
 
 ## Quick Start
 
-### Option A — One‑Click Scripts (No Python Required)
+### Step 1 — Get the Code
+
+First, open your terminal (macOS) or PowerShell (Windows), navigate to where you want to store the project, and download the repository:
+
+```bash
+# Clone the repository using Git
+git clone https://github.com/rocketproplab/rpl-blast.git
+
+# Move into the new project directory
+cd rpl-blast
+```
+
+### Step 2 — Setup and Run
+
+Choose the setup option below that best fits your environment.
+
+#### Option A — One‑Click Scripts (No Python Required)
 
 The scripts in `scripts/` use [micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html) to install a project‑scoped Python environment at `.venv`. No global changes are made.
 
@@ -60,7 +76,15 @@ Open **http://127.0.0.1:8000** in your browser.
 
 You can customize the host and port via environment variables `HOST` and `PORT` when using the one‑click scripts.
 
+### Setup Troubleshooting
+
+If you run into issues getting the app to start:
+- **macOS says "Permission denied":** Run `bash scripts/fix_permissions_mac.sh` in your terminal to unblock the scripts.
+- **`FATAL: missing key` on startup:** Your `config.user.yaml` might be missing a required section or is malformed. Compare it against `config.base.yaml`.
+- **Command not found (git/python):** Ensure Git and Python (3.9+) are installed and added to your system PATH.
+
 ---
+
 
 ## Dashboard Pages
 
