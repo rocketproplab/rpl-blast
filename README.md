@@ -23,8 +23,8 @@ mkdir rpl-blast
 cd rpl-blast
 ```
 
+Alternativly you can use file explorer to create the file then cd into it using the command line
 ```bash
-#Alternativly you can use file explorer to create the file then cd into it using the command line
 cd C:/../rpl-blast
 ```
 
