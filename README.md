@@ -23,11 +23,12 @@ mkdir rpl-blast
 cd rpl-blast
 ```
 
-Alternativly you can use file explorer to create the file then cd into it using the command line
+Alternatively, you can use file explorer to create the file, then cd into it using the command line
 ```bash
 cd C:/../rpl-blast
 ```
 
+Now you can run this in your terminal. Make sure you have moved into the correct folder for this project.
 ```bash
 # Clone the repository using Git
 git clone https://github.com/rocketproplab/rpl-blast.git
