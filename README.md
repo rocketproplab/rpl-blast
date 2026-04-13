@@ -63,6 +63,7 @@ scripts\setup_win.bat
 # Start the app
 scripts\start_win.bat
 ```
+> Note: The script might not run correctly. Go to Step 3 to set up the config file
 
 **Uninstall** (removes `.venv` and the local micromamba — nothing global)
 - macOS: `scripts/Uninstall Mac.command`
@@ -82,12 +83,26 @@ source .venv/bin/activate    # macOS / Linux
 pip install -r requirements.txt
 ```
 
+### Step 3 — Update config.user.yaml
+
+1. Open this project in your favorite IDE (I recommend VSCode)
+2. Create the `config.user.yaml` file under frontend/app
+3. Copy the contents of `config.base.yaml` into `config.user.yaml`
+4. Use Arduino IDE to determine `serial_port` by connecting an Arduino to your laptop. Then change the value in `config.user.yaml`
+5. Make sure to save the file before you run
+
 ### Running the App
 
+#### Recommended
+
+1. Navigate to the scripts folder of the project in your file explorer
+2. Right-click "start_win" (the batch file) and click "Run as administrator" **OR** run "Start App.command' for mac users
+
+#### Alternative: Run this command in your terminal
 ```bash
 uvicorn backend.app.main:app --reload
 ```
-Open **http://127.0.0.1:8000** in your browser.
+Open **<http://127.0.0.1:8000>** in your browser.
 
 You can customize the host and port via environment variables `HOST` and `PORT` when using the one‑click scripts.
 
@@ -97,6 +112,8 @@ If you run into issues getting the app to start:
 - **macOS says "Permission denied":** Run `bash scripts/fix_permissions_mac.sh` in your terminal to unblock the scripts.
 - **`FATAL: missing key` on startup:** Your `config.user.yaml` might be missing a required section or is malformed. Compare it against `config.base.yaml`.
 - **Command not found (git/python):** Ensure Git and Python (3.9+) are installed and added to your system PATH.
+
+> Google and LLMs are your friend! use them too to help you to get started!
 
 ---
 
