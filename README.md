@@ -15,6 +15,20 @@ BLAST reads data from either a built‑in simulator or a serial‑connected flig
 First, open your terminal (macOS) or PowerShell (Windows), navigate to where you want to store the project, and download the repository:
 
 ```bash
+# Navigate to the folder where you want to store the project
+cd C:/../<name-of-folder-for-project>
+
+# Create a new directory for the project and move into it
+mkdir rpl-blast
+cd rpl-blast
+```
+
+```bash
+#Alternativly you can use file explorer to create the file then cd into it using the command line
+cd C:/../rpl-blast
+```
+
+```bash
 # Clone the repository using Git
 git clone https://github.com/rocketproplab/rpl-blast.git
 
