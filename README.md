@@ -29,6 +29,7 @@ cd C:/../rpl-blast
 ```
 
 Now you can run this in your terminal. Make sure you have moved into the correct folder for this project.
+> Note: Make sure you have git installed. See [here](https://git-scm.com/install/) for Git installation
 ```bash
 # Clone the repository using Git
 git clone https://github.com/rocketproplab/rpl-blast.git
@@ -41,7 +42,7 @@ cd rpl-blast
 
 Choose the setup option below that best fits your environment.
 
-#### Option A — One‑Click Scripts (No Python Required)
+#### Option A — One‑Click Scripts (No Python Required) ***Recommended if you are not going to develop***
 
 The scripts in `scripts/` use [micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html) to install a project‑scoped Python environment at `.venv`. No global changes are made.
 
@@ -66,11 +67,12 @@ scripts\start_win.bat
 > Note: The script might not run correctly. Go to Step 3 to set up the config file
 
 **Uninstall** (removes `.venv` and the local micromamba — nothing global)
+> Only do this if you do not want to have the program anymore. If you need to use the program again you will have to reinstall everything.
 - macOS: `scripts/Uninstall Mac.command`
 - Windows: `scripts\uninstall_win.bat`
 
-### Option B — Manual Setup (Conda / pip)
-
+### Option B — Manual Setup (Conda / pip) 
+> Note: This requires an installation of [Python 3.9+](https://www.python.org/downloads/)
 ```bash
 # Create and activate a Conda environment
 conda env create -f environment.yaml
@@ -85,7 +87,7 @@ pip install -r requirements.txt
 
 ### Step 3 — Update config.user.yaml
 
-1. Open this project in your favorite IDE (I recommend VSCode)
+1. Open this project in your favorite IDE (I recommend VSCode) or NotePad
 2. Create the `config.user.yaml` file under frontend/app
 3. Copy the contents of `config.base.yaml` into `config.user.yaml`
 4. Use Arduino IDE to determine `serial_port` by connecting an Arduino to your laptop. Then change the value in `config.user.yaml`
@@ -96,7 +98,7 @@ pip install -r requirements.txt
 #### Recommended
 
 1. Navigate to the scripts folder of the project in your file explorer
-2. Right-click "start_win" (the batch file) and click "Run as administrator" **OR** run "Start App.command' for mac users
+2. Right-click "start_win" (the batch file) and click "Run as administrator" **OR** run "Start App.command' for Mac users
 
 #### Alternative: Run this command in your terminal
 ```bash
