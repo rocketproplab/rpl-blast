@@ -676,7 +676,7 @@ pytest -v backend/tests
 
 - **Lock down serial frame schema/units with firmware** — Define a simple ICD (keys, types, units, sample rate, timestamp semantics) and version it. Update `SerialSource._parse_and_update` to match, and add a shape check so malformed frames are ignored without crashing.
 
-- **Move sensor processing from Arduino to the laptop** — Shift lightweight conversions (ADC voltage → engineering units: PT volts → PSI, TC volts → °C, LC volts → force/mass) and offset math into BLAST. Reduces MCU load and lets us update conversion parameters without reflashing.
+- **Move sensor formatting from Arduino to the laptop** — Shift JSON parsing into BLAST. Reduces FC load and lets us define a concrete architecture for sending data
 
 - **Explore Rust or C for serial I/O hot paths** — Prototype a tiny reader (line parsing + ring buffer) exposed to Python via FFI or a local socket. Only adopt if benchmarks show real CPU/latency gains at expected rates.
 
